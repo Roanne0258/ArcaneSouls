@@ -1,0 +1,42 @@
+# === Unreal Engine Core File Types ===
+*.uasset lock
+*.umap lock
+*.locres lfs
+*.locmeta lfs
+
+# === Attribute Definitions ===
+[attr]lock filter=lfs diff=lfs merge=binary -text lockable
+[attr]lockonly lockable
+[attr]lfs filter=lfs diff=lfs merge=binary -text
+[attr]lfstext filter=lfs diff=lfstext merge=lfstext -text
+
+# === Steam Audio ===
+*.phononscene lfs
+*.probebox lfs
+*.probebatch lfs
+*.bakedsources lfs
+
+# === Binaries ===
+*.exe lfs
+*.dll lfs
+*.rcc lfs
+
+# === FMOD & Audio ===
+*.bank lfs
+*.wav lfs
+*.mp3 lfs
+*.ogg lfs
+*.flac lfs
+
+# === Image Assets ===
+*.png lfs
+*.jpg lfs
+*.tga lfs
+*.bmp lfs
+*.ico lfs
+*.icns lfs
+
+# === Movie/Video Assets ===
+*.mp4 lfs
+*.mov lfs
+*.bk2 lfs

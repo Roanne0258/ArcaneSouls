@@ -1,0 +1,48 @@
+# 🔷 Unreal Engine Build Folders
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+
+# 🔷 IDE & System Files
+.vs/
+.vscode/
+*.sln
+*.suo
+*.VC.db
+*.opensdf
+*.sdf
+*.tlog
+*.log
+*.pdb
+*.obj
+*.idb
+*.aps
+*.ncb
+*.tmp
+*.cache
+*.db
+*.db-journal
+*.scc
+
+# 🔷 OS-specific Files
+.DS_Store
+*.AppleDouble
+*.LSOverride
+ehthumbs.db
+Icon?
+Thumbs.db
+*.swp
+
+# 🔷 Git/Merge Artifacts
+*.orig
+*.bak
+*.old
+
+# 🔷 Unreal Local Editor Config
+Config/DefaultEditor.ini
+Config/DefaultEditorPerProjectUserSettings.ini
+Config/DefaultLayout.ini
+
+# 🔷 Arcane Souls Custom
+Content/Marketplace/
