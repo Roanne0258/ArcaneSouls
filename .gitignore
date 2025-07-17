@@ -46,3 +46,6 @@ Config/DefaultLayout.ini
 
 # 🔷 Arcane Souls Custom
 Content/Marketplace/
+
+# JetBrains Rider / IntelliJ
+.idea/
