@@ -10,18 +10,29 @@ UCLASS()
 class ARCANESOULS_API APlacementHelperActor : public AActor
 {
 	GENERATED_BODY()
-	
+
+	APlacementHelperActor();
 	/* ──────────────── Public Vars ──────────────── */
 public:
-	/** 정렬 대상. 비워두면 RootComponent 사용 */
+	/** 배치 대상 메시 (Instance Editable) */
+	UPROPERTY(EditInstanceOnly, Category = "Placement")
+	UStaticMeshComponent* MeshComp = nullptr;
+
+	/** 이동·변경 시 자동 정렬 여부 */               // NEW
 	UPROPERTY(EditAnywhere, Category = "Placement")
-	USceneComponent* TargetComponent = nullptr;
+	bool bAutoAlign = true;
+
+	/** 정렬 기준: true = 메시 하단, false = 피벗 */ // NEW
+	UPROPERTY(EditAnywhere, Category = "Placement")
+	bool bUseMeshBottom = true;
 
 	/* ──────────────── Public Funcs ─────────────── */
 public:
-	/** 바닥으로 Z 위치 맞추기 */
+	/** 버튼 수동 호출용 */
 	UFUNCTION(CallInEditor, Category = "Placement")
 	void AlignToGround();
 
-	/* ─────────────── Protected / Private ───────── */
+	/* ──────────────── Protected ─────────────── */
+protected:
+	virtual void OnConstruction(const FTransform& Transform) override;
 };
