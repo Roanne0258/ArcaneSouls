@@ -7,11 +7,11 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogASPlacement, Log, All);
 
 /**
- *  Editor-only helper actor
- *  - AlignToGround : 지면에 Z 위치 맞춤 (피벗 or 메시 하단)
- *  - SnapToGrid    : 지정 그리드 간격으로 위치 스냅
+ * Editor 전용 배치 도우미 액터
+ * - AlignToGround : 지면에 Z 위치 맞춤 (피벗 또는 메시 하단 기준)
+ * - SnapToGrid    : 지정된 그리드 간격으로 위치 스냅
  *
- *  Header order :  public vars → public funcs → protected vars → protected funcs
+ * Header 순서: public vars → public funcs → protected vars → protected funcs
  */
 UCLASS()
 class ARCANESOULS_API APlacementHelperActor : public AActor
@@ -20,53 +20,61 @@ class ARCANESOULS_API APlacementHelperActor : public AActor
 
 	/* ──────────────── Public Vars ──────────────── */
 public:
-	/** 배치 대상 메시 (Instance Editable) */
+
+	/** 배치 대상 메시 (인스턴스 전용) */
 	UPROPERTY(EditInstanceOnly, Category="Placement")
 	UStaticMeshComponent* MeshComp = nullptr;
 
-	/** 이동·변경 시 자동 지면 정렬 여부 */
+	/** 이동 또는 변경 시 자동 지면 정렬 여부 */
 	UPROPERTY(EditAnywhere, Category="Placement")
 	bool bAutoAlign = true;
-	
-	/** Slope 정렬 시 Yaw 도 노멀로 맞출지 여부 (기본 true) */
+
+	/** 슬로프 정렬 시 Yaw 회전도 노멀에 맞출지 여부 */
 	UPROPERTY(EditAnywhere, Category="Placement|Slope")
 	bool bAlignYawToSlope = true;
 
+	/** 위치 초기화 기준점 */
 	UPROPERTY(EditAnywhere, Category="Placement|Reset")
-	FVector ResetLocationOrigin = FVector::ZeroVector;   // 인스턴스별 초기화 좌표
+	FVector ResetLocationOrigin = FVector::ZeroVector;
 
+	/** 회전 초기화 값 */
 	UPROPERTY(EditAnywhere, Category="Placement|Reset",
 			  meta=(ToolTip="Yaw·Pitch·Roll 전부 0°로 하려면 (0,0,0)"))
-	FRotator ResetRotationValue = FRotator::ZeroRotator; // 인스턴스별 초기화 회전
+	FRotator ResetRotationValue = FRotator::ZeroRotator;
 
 	/**
-	 * RandomYaw 간격(도)
-	 * -  0   : 완전 랜덤
-	 * - 15   : 0·15·30… 15° 단위
-	 * - 180  : 0 또는 180 (최소 좌·우 전용)
+	 * 무작위 Yaw 회전 간격 (°)
+	 * - 0    : 완전 랜덤
+	 * - 15   : 0, 15, 30… 식으로 회전
+	 * - 180  : 0 또는 180 (좌우 전용)
 	 */
 	UPROPERTY(EditAnywhere, Category="Placement|RandomYaw",
 			  meta=(ClampMin="0.0", ClampMax="180.0"))
 	float RandomYawStep = 15.f;
 
+	/** 무작위 위치 이동 반경 (cm) */
 	UPROPERTY(EditAnywhere, Category="Placement|RandomLoc",
-		  meta=(ClampMin="1.0", ToolTip="무작위 이동 반경(cm)"))
+			  meta=(ClampMin="1.0", ToolTip="무작위 이동 반경(cm)"))
 	float RandomRadius = 200.f;
 
-	/** 머티리얼 순환용 배열(첫 번째 슬롯 전용) ★ NEW */
+	/** 머티리얼 순환 배열 (첫 슬롯 대상) */
 	UPROPERTY(EditInstanceOnly, Category="MaterialCycler",
 			  meta=(ToolTip="버튼 클릭 시 차례로 적용할 머티리얼 목록"))
 	TArray<UMaterialInterface*> MaterialList;
 
-	/** 충돌 순환 모드: No → Overlap → Block ★ NEW */
+	/** 충돌 방식 순환 배열: No → Overlap → Block */
 	UPROPERTY(EditAnywhere, Category="CollisionToggle",
 			  meta=(ToolTip="ToggleCollision() 버튼 순환 순서"))
-	TArray<TEnumAsByte<ECollisionEnabled::Type>> CollisionCycle
-		= { ECollisionEnabled::NoCollision,
-			ECollisionEnabled::QueryOnly,
-			ECollisionEnabled::QueryAndPhysics };
+	TArray<TEnumAsByte<ECollisionEnabled::Type>> CollisionCycle =
+	{
+		ECollisionEnabled::NoCollision,
+		ECollisionEnabled::QueryOnly,
+		ECollisionEnabled::QueryAndPhysics
+	};
+
 	/* ──────────────── Public Funcs ─────────────── */
 public:
+
 	/** 기본 생성자 */
 	APlacementHelperActor();
 
@@ -77,39 +85,49 @@ public:
 	/** 회전을 ResetRotationValue 로 설정 */
 	UFUNCTION(CallInEditor, Category="Placement|Reset")
 	void ResetRotation();
-	
-	/** 중심은 유지하고 XY만 무작위 이동(반경 RandomRadius) */
+
+	/** XY 무작위 이동 (중심 유지, 반경 RandomRadius) */
 	UFUNCTION(CallInEditor, Category="Placement")
 	void RandomLocationInRadius();
 
-	/** 지면 정렬 버튼 */
+	/** 지면 정렬 실행 */
 	UFUNCTION(CallInEditor, Category="Placement")
 	void AlignToGround();
 
-	/* 정렬: 메시 하단 노멀(Pitch·Roll) 맞추기 */
+	/** 슬로프 정렬 (Pitch·Roll 정렬) */
 	UFUNCTION(CallInEditor, Category="Placement")
-	void AlignSlope();     // ★ NEW
-	/* 랜덤 회전: 반복 티 제거 */
-	UFUNCTION(CallInEditor, Category="Placement")
-	void RandomYaw();      // ★ NEW
+	void AlignSlope();
 
-	/** 머티리얼을 배열 순서로 순환 적용 ★ NEW */
+	/** 무작위 Yaw 회전 적용 */
+	UFUNCTION(CallInEditor, Category="Placement")
+	void RandomYaw();
+
+	/** 머티리얼 순환 적용 */
 	UFUNCTION(CallInEditor, Category="MaterialCycler")
 	void CycleMaterial();
 
-	/** CollisionEnabled 를 Cycle 순서대로 토글 ★ NEW */
+	/** CollisionEnabled 상태 순환 */
 	UFUNCTION(CallInEditor, Category="CollisionToggle")
 	void ToggleCollision();
 
-	/* ─────────────── Protected Funcs ───────────── */
+	/* ───────────── Protected Funcs ────────────── */
 protected:
-	/** 에디터에서 Transform 수정 시 자동 호출 */
+
+	/** Transform 변경 시 호출됨 (에디터 전용) */
 	virtual void OnConstruction(const FTransform& Transform) override;
 
 	/* ──────────────── Private Vars ─────────────── */
 private:
+
 	/** true = 메시 하단 기준, false = 피벗 기준 */
 	bool bUseMeshBottom = true;
-	int32 CurrentMatIdx   = -1;   // ★ NEW
-	int32 CurrentCollIdx  = -1;   // ★ NEW
+
+	/** 머티리얼 순서 인덱스 */
+	int32 CurrentMatIdx = -1;
+
+	/** 충돌 순서 인덱스 */
+	int32 CurrentCollIdx = -1;
+
+private:
+
 };
