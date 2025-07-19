@@ -10,6 +10,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "Systems/GridPuzzle/GridPuzzleManagerComponent.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -94,6 +95,7 @@ void AArcaneSoulsCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 
 void AArcaneSoulsCharacter::Move(const FInputActionValue& Value)
 {
+	UE_LOG(LogTemp, Warning, TEXT("dd"));
 	// input is a Vector2D
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
@@ -126,4 +128,37 @@ void AArcaneSoulsCharacter::Look(const FInputActionValue& Value)
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
+}
+
+void AArcaneSoulsCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+	GridMgr = FindComponentByClass<UGridPuzzleManagerComponent>();
+}
+
+/* 4방향 정규화 */
+FIntPoint AArcaneSoulsCharacter::GetFacingDir4() const
+{
+	const FVector Fwd = GetControlRotation().Vector();
+	if (FMath::Abs(Fwd.X) > FMath::Abs(Fwd.Y))
+		return (Fwd.X >= 0) ? FIntPoint{+1,0} : FIntPoint{-1,0};
+	else
+		return (Fwd.Y >= 0) ? FIntPoint{0,+1}  : FIntPoint{0,-1};
+}
+
+/* 화염 마법 */
+void AArcaneSoulsCharacter::CastFire()
+{
+	if (!GridMgr) return;
+	const FIntPoint Cell = GridMgr->WorldToGrid(GetActorLocation());
+	const FIntPoint Dir  = GetFacingDir4();
+	GridMgr->UseFireSpell(Cell, Dir);
+}
+
+/* 얼음 마법 */
+void AArcaneSoulsCharacter::CastIce()
+{
+	if (!GridMgr) return;
+	const FIntPoint Cell = GridMgr->WorldToGrid(GetActorLocation());
+	GridMgr->UseIceSpell(Cell);
 }

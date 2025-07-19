@@ -8,6 +8,8 @@
  *  열거형 및 구조체
  *─────────────────────────────────────────────*/
 
+class AGridWallActor;
+class AGridFloorActor;
 /** 셀 타입 */
 UENUM(BlueprintType)
 enum class EGridCellType : uint8
@@ -74,6 +76,8 @@ class ARCANESOULS_API UGridPuzzleManagerComponent : public UActorComponent
     GENERATED_BODY()
 
 public:
+    virtual void BeginPlay() override;
+    void SyncHealthFromPlacedActors();
     /** 생성자 */
     UGridPuzzleManagerComponent();
 
@@ -106,10 +110,9 @@ protected:
      * 프리팹 설정
      *─────────────────────*/
     UPROPERTY(EditDefaultsOnly, Category="Grid|Prefabs")
-    TSubclassOf<AActor> FloorClass;
-
+    TSubclassOf<AGridFloorActor> FloorClass;
     UPROPERTY(EditDefaultsOnly, Category="Grid|Prefabs")
-    TSubclassOf<AActor> WallClass;
+    TSubclassOf<AGridWallActor>  WallClass;
 
     /*─────────────────────
      * 런타임 데이터
@@ -133,6 +136,7 @@ protected:
 
     /** 데미지 처리 */
     void ApplyDamageAround(const FIntPoint& Center);
+    bool CanMove(const FIntPoint& From, const FIntPoint& Dir) const;
 
     /** 바닥/벽 스폰 */
     void SpawnFloors();
