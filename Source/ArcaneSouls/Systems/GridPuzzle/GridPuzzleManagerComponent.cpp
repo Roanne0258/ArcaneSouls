@@ -155,7 +155,7 @@ void UGridPuzzleManagerComponent::SpawnFloors()
         AGridFloorActor* Floor = World->SpawnActor<AGridFloorActor>(FloorClass, Elem.Value.WorldLocation, FRotator::ZeroRotator);
         Floor->Health = Elem.Value.Health;
 #if WITH_EDITOR
-        DrawDebugBox(World, Elem.Value.WorldLocation, FVector(CellSize*0.5f), FColor::Black, true, 10.f);
+        DrawDebugBox(World, Elem.Value.WorldLocation, FVector(CellSize*0.5f), FColor::Black, false, 10.f);
 #endif
     }
 }
@@ -177,7 +177,7 @@ void UGridPuzzleManagerComponent::SpawnEdges()
         AGridWallActor* Wall = World->SpawnActor<AGridWallActor>(WallClass, Mid, FRotator(0.f, Yaw, 0.f));
         Wall->Health = E.Health;
 #if WITH_EDITOR
-        DrawDebugLine(World, A, B, FColor::Red, true, 10.f, 0, 10.f);
+        DrawDebugLine(World, A, B, FColor::Red, false, 10.f, 0, 10.f);
 #endif
     }
 }
