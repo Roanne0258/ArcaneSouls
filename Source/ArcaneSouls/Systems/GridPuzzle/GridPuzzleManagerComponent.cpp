@@ -1,34 +1,37 @@
-// GridPuzzleManagerComponent.cpp – Edge‑기반 벽 배치 버전 (Fix: FIntPoint 비교)
+// GridPuzzleManagerComponent.cpp – Designer‑editable health sync (BeginPlay)
 #include "GridPuzzleManagerComponent.h"
 #include "Engine/World.h"
 #include "DrawDebugHelpers.h"
+#include "GridFloorActor.h"   // ⬅ 디자이너용 바닥 BP 의 C++ 클래스
+#include "GridWallActor.h"    // ⬅ 디자이너용 벽   BP 의 C++ 클래스
+#include "Kismet/GameplayStatics.h"
 
 //─────────────────────────────────────────────
-// ⬇︎ 방향 상수
-static const FIntPoint DirRight(1, 0);
-static const FIntPoint DirUp   (0, 1);
-static const FIntPoint DirLeft (-1,0);
-static const FIntPoint DirDown (0,-1);
+// 방향 상수
+static const FIntPoint DirRight(1,0), DirUp(0,1), DirLeft(-1,0), DirDown(0,-1);
+static const FIntPoint AroundOffsets[5]={{0,0},{1,0},{-1,0},{0,1},{0,-1}};
 
-/** A가 B보다 작은지를 정렬용으로 판단 (X → Y 순)
- *  FIntPoint에는 operator<가 없으므로 수동 비교 */
-static bool IsPointLess(const FIntPoint& A, const FIntPoint& B)
-{
-    return (A.X < B.X) || (A.X == B.X && A.Y < B.Y);
-}
+/* FIntPoint 비교 (A < B) */
+static bool IsPointLess(const FIntPoint& A,const FIntPoint& B)
+{ return (A.X<B.X) || (A.X==B.X && A.Y<B.Y); }
 
-/** 두 셀 좌표를 받아 정렬된 EdgeKey 생성 */
-static FGridEdge MakeEdgeKey(const FIntPoint& P1, const FIntPoint& P2, int32 DefaultHealth = 3)
-{
-    return IsPointLess(P1, P2)
-        ? FGridEdge{P1, P2, DefaultHealth}
-        : FGridEdge{P2, P1, DefaultHealth};
-}
+/* 정렬된 EdgeKey 생성 */
+static FGridEdge MakeEdgeKey(const FIntPoint& P1,const FIntPoint& P2,int32 Default=3)
+{ return IsPointLess(P1,P2) ? FGridEdge{P1,P2,Default} : FGridEdge{P2,P1,Default}; }
 
 //─────────────────────────────────────────────
 UGridPuzzleManagerComponent::UGridPuzzleManagerComponent()
 {
     PrimaryComponentTick.bCanEverTick = false;
+}
+
+//─────────────────────────────────────────────
+void UGridPuzzleManagerComponent::BeginPlay()
+{
+    Super::BeginPlay();
+
+    /* ① 에디터에서 디자이너가 조정한 Health 를 런타임 데이터에 반영 */
+    SyncHealthFromPlacedActors();
 }
 
 //─────────────────────────────────────────────
@@ -56,12 +59,8 @@ void UGridPuzzleManagerComponent::InitializeGrid()
         for (int32 X = 0; X < Cols; ++X)
         {
             const FIntPoint C(X, Y);
-
-            // 내부 Edge (오른쪽/위쪽)
             if (X < Cols - 1)   EdgeSet.Add(MakeEdgeKey(C, C + DirRight));
             if (Y < Rows - 1)   EdgeSet.Add(MakeEdgeKey(C, C + DirUp));
-
-            // 외곽 Edge (바깥 방향)
             if (X == 0)         EdgeSet.Add(MakeEdgeKey(C, C + DirLeft));
             if (X == Cols - 1)  EdgeSet.Add(MakeEdgeKey(C, C + DirRight));
             if (Y == 0)         EdgeSet.Add(MakeEdgeKey(C, C + DirDown));
@@ -75,6 +74,7 @@ void UGridPuzzleManagerComponent::InitializeGrid()
 }
 
 //─────────────────────────────────────────────
+// 좌표 변환
 FVector UGridPuzzleManagerComponent::GridToWorld(const FIntPoint& Coord) const
 {
     return FVector(Coord.X * CellSize, Coord.Y * CellSize, 0.f);
@@ -88,6 +88,7 @@ FIntPoint UGridPuzzleManagerComponent::WorldToGrid(const FVector& Pos) const
 }
 
 //─────────────────────────────────────────────
+// 헬퍼
 FGridCellData* UGridPuzzleManagerComponent::GetCellData(const FIntPoint& Coord)
 {
     return GridMap.Find(Coord);
@@ -99,6 +100,50 @@ bool UGridPuzzleManagerComponent::IsInBounds(const FIntPoint& Coord) const
 }
 
 //─────────────────────────────────────────────
+// 건강 동기화 : BeginPlay 에 호출
+void UGridPuzzleManagerComponent::SyncHealthFromPlacedActors()
+{
+    UWorld* World = GetWorld();
+    if (!World) return;
+
+    /* 바닥 셀 */
+    TArray<AActor*> Floors;
+    UGameplayStatics::GetAllActorsOfClass(World, AGridFloorActor::StaticClass(), Floors);
+    for (AActor* Actor : Floors)
+    {
+        AGridFloorActor* Floor = Cast<AGridFloorActor>(Actor);
+        if (!Floor) continue;
+
+        const FIntPoint C = WorldToGrid(Floor->GetActorLocation());
+        if (FGridCellData* Cell = GridMap.Find(C))
+            Cell->Health = FMath::Clamp(Floor->Health, 0, 3);
+    }
+
+    /* 벽(Edge) */
+    TArray<AActor*> Walls;
+    UGameplayStatics::GetAllActorsOfClass(World, AGridWallActor::StaticClass(), Walls);
+    for (AActor* Actor : Walls)
+    {
+        AGridWallActor* Wall = Cast<AGridWallActor>(Actor);
+        if (!Wall) continue;
+
+        // 두 인접 셀 계산 (Mid ± HalfCell in local yaw)
+        const FVector Mid = Wall->GetActorLocation();
+        const float   Half = CellSize * 0.5f;
+        const bool    bHorizontal = FMath::IsNearlyZero(FMath::Fmod(Wall->GetActorRotation().Yaw, 180.f));
+
+        FVector Offset = bHorizontal ? FVector(Half, 0, 0) : FVector(0, Half, 0);
+        const FIntPoint A = WorldToGrid(Mid - Offset);
+        const FIntPoint B = WorldToGrid(Mid + Offset);
+
+        const FGridEdge Key = MakeEdgeKey(A, B);
+        if (FGridEdge* Edge = EdgeSet.Find(Key))
+            Edge->Health = FMath::Clamp(Wall->Health, 0, 3);
+    }
+}
+
+//─────────────────────────────────────────────
+// 스폰 함수들
 void UGridPuzzleManagerComponent::SpawnFloors()
 {
     if (!FloorClass) return;
@@ -107,7 +152,8 @@ void UGridPuzzleManagerComponent::SpawnFloors()
 
     for (const auto& Elem : GridMap)
     {
-        World->SpawnActor<AActor>(FloorClass, Elem.Value.WorldLocation, FRotator::ZeroRotator);
+        AGridFloorActor* Floor = World->SpawnActor<AGridFloorActor>(FloorClass, Elem.Value.WorldLocation, FRotator::ZeroRotator);
+        Floor->Health = Elem.Value.Health;
 #if WITH_EDITOR
         DrawDebugBox(World, Elem.Value.WorldLocation, FVector(CellSize*0.5f), FColor::Black, true, 10.f);
 #endif
@@ -126,11 +172,70 @@ void UGridPuzzleManagerComponent::SpawnEdges()
         const FVector B = GridToWorld(E.B);
         const FVector Mid = (A + B) * 0.5f;
         const FIntPoint Dir = E.B - E.A;
-        const float Yaw = (Dir.X != 0) ? 0.f : 90.f; // 수평 0°, 수직 90°
+        const float Yaw = (Dir.X != 0) ? 0.f : 90.f;
 
-        World->SpawnActor<AActor>(WallClass, Mid, FRotator(0.f, Yaw, 0.f));
+        AGridWallActor* Wall = World->SpawnActor<AGridWallActor>(WallClass, Mid, FRotator(0.f, Yaw, 0.f));
+        Wall->Health = E.Health;
 #if WITH_EDITOR
         DrawDebugLine(World, A, B, FColor::Red, true, 10.f, 0, 10.f);
 #endif
     }
+}
+
+/*────────────────────────────────────────────
+ *  Spell Logic
+ *──────────────────────────────────────────*/
+void UGridPuzzleManagerComponent::UseFireSpell(const FIntPoint& Cell,const FIntPoint& Dir)
+{
+    // 1) 벽 찾기
+    const FIntPoint Other = Cell + Dir;
+    const FGridEdge Key = MakeEdgeKey(Cell,Other);
+    if (FGridEdge* Edge = EdgeSet.Find(Key))
+    {
+        if (Edge->Health>0) { --Edge->Health; /* TODO: 파괴 비주얼 */ }
+    }
+
+    // 2) 주변 셀 데미지
+    ApplyDamageAround(Cell);
+}
+
+void UGridPuzzleManagerComponent::UseIceSpell(const FIntPoint& Target)
+{
+    if (FGridCellData* Cell = GridMap.Find(Target))
+    {
+        if (!Cell->bDestroyed && Cell->Health<3)
+        {
+            ++Cell->Health;
+        }
+    }
+}
+
+void UGridPuzzleManagerComponent::ApplyDamageAround(const FIntPoint& Center)
+{
+    for (const FIntPoint& Off : AroundOffsets)
+    {
+        if (FGridCellData* Cell = GridMap.Find(Center+Off))
+        {
+            if (!Cell->bDestroyed && Cell->Health>0)
+            {
+                if (--Cell->Health==0) Cell->bDestroyed=true; // TODO: 파괴 비주얼
+            }
+        }
+    }
+}
+
+bool UGridPuzzleManagerComponent::CanMove(const FIntPoint& From,const FIntPoint& Dir) const
+{
+    const FIntPoint To = From+Dir;
+    // 1) 셀 존재 & 파괴 여부
+    const FGridCellData* Dest = GridMap.Find(To);
+    if (!Dest || Dest->bDestroyed || Dest->Health<=0) return false;
+
+    // 2) 벽 체크
+    const FGridEdge Key = MakeEdgeKey(From,To);
+    if (const FGridEdge* Edge = EdgeSet.Find(Key))
+    {
+        return Edge->Health<=0; // 파괴되었거나 health 0 이면 통과 가능
+    }
+    return true; // 벽이 없으면 통과 가능
 }
