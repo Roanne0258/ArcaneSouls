@@ -1,29 +1,44 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "ASPlayerCharacter.generated.h"
 
-UCLASS()
+class UCameraComponent;
+class USpringArmComponent;
+class UGridPuzzleManagerComponent;
+
+UCLASS(Blueprintable)
 class ARCANESOULS_API AASPlayerCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
 	AASPlayerCharacter();
 
+	/* ───── Gameplay Actions ───── */
+	UFUNCTION(BlueprintCallable, Category="Puzzle|Magic") void CastFire();
+	UFUNCTION(BlueprintCallable, Category="Puzzle|Magic") void CastIce();
+
 protected:
-	// Called when the game starts or when spawned
+	/* ───── ACharacter overrides ─ */
 	virtual void BeginPlay() override;
+	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	/* ───── Components ───── */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera") USpringArmComponent* CameraBoom;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera") UCameraComponent*   FollowCamera;
 
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	/* ───── Movement helpers ─ */
+	void MoveForward(float Value);
+	void MoveRight (float Value);
+	void TurnAtRate(float Rate);
+	void LookUpAtRate(float Rate);
 
+	/* ───── Internal ───── */
+	UPROPERTY() UGridPuzzleManagerComponent* GridMgr = nullptr;
+	FIntPoint   GetFacingDir4() const;
+
+	static constexpr float TurnRate  = 45.f;  // deg/sec
+	static constexpr float LookRate  = 45.f;
 };
