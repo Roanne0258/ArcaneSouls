@@ -16,6 +16,7 @@ public class ArcaneSouls : ModuleRules
 			"Engine",
 			"InputCore",
 			"EnhancedInput",
+			"GeometryCollectionEngine",
 
 			/* Combat & FX */
 			"GameplayAbilities",     // GAS
