@@ -8,8 +8,8 @@
  *  열거형 및 구조체
  *─────────────────────────────────────────────*/
 
-class AGridWallActor;
-class AGridFloorActor;
+class AGridWallGCActor;
+class AGridFloorGCActor;
 /** 셀 타입 */
 UENUM(BlueprintType)
 enum class EGridCellType : uint8
@@ -110,9 +110,9 @@ protected:
      * 프리팹 설정
      *─────────────────────*/
     UPROPERTY(EditDefaultsOnly, Category="Grid|Prefabs")
-    TSubclassOf<AGridFloorActor> FloorClass;
+    TSubclassOf<AGridFloorGCActor> FloorClass;
     UPROPERTY(EditDefaultsOnly, Category="Grid|Prefabs")
-    TSubclassOf<AGridWallActor>  WallClass;
+    TSubclassOf<AGridWallGCActor>  WallClass;
 
     /*─────────────────────
      * 런타임 데이터

@@ -2,8 +2,8 @@
 #include "GridPuzzleManagerComponent.h"
 #include "Engine/World.h"
 #include "DrawDebugHelpers.h"
-#include "GridFloorActor.h"   // ⬅ 디자이너용 바닥 BP 의 C++ 클래스
-#include "GridWallActor.h"    // ⬅ 디자이너용 벽   BP 의 C++ 클래스
+#include "GridFloorGCActor.h"
+#include "GridWallGCActor.h"
 #include "Kismet/GameplayStatics.h"
 
 //─────────────────────────────────────────────
@@ -108,10 +108,10 @@ void UGridPuzzleManagerComponent::SyncHealthFromPlacedActors()
 
     /* 바닥 셀 */
     TArray<AActor*> Floors;
-    UGameplayStatics::GetAllActorsOfClass(World, AGridFloorActor::StaticClass(), Floors);
+    UGameplayStatics::GetAllActorsOfClass(World, AGridFloorGCActor::StaticClass(), Floors);
     for (AActor* Actor : Floors)
     {
-        AGridFloorActor* Floor = Cast<AGridFloorActor>(Actor);
+        AGridFloorGCActor* Floor = Cast<AGridFloorGCActor>(Actor);
         if (!Floor) continue;
 
         const FIntPoint C = WorldToGrid(Floor->GetActorLocation());
@@ -121,10 +121,10 @@ void UGridPuzzleManagerComponent::SyncHealthFromPlacedActors()
 
     /* 벽(Edge) */
     TArray<AActor*> Walls;
-    UGameplayStatics::GetAllActorsOfClass(World, AGridWallActor::StaticClass(), Walls);
+    UGameplayStatics::GetAllActorsOfClass(World, AGridWallGCActor::StaticClass(), Walls);
     for (AActor* Actor : Walls)
     {
-        AGridWallActor* Wall = Cast<AGridWallActor>(Actor);
+        AGridWallGCActor* Wall = Cast<AGridWallGCActor>(Actor);
         if (!Wall) continue;
 
         // 두 인접 셀 계산 (Mid ± HalfCell in local yaw)
@@ -152,7 +152,7 @@ void UGridPuzzleManagerComponent::SpawnFloors()
 
     for (const auto& Elem : GridMap)
     {
-        AGridFloorActor* Floor = World->SpawnActor<AGridFloorActor>(FloorClass, Elem.Value.WorldLocation, FRotator::ZeroRotator);
+        AGridFloorGCActor* Floor = World->SpawnActor<AGridFloorGCActor>(FloorClass, Elem.Value.WorldLocation, FRotator::ZeroRotator);
         Floor->Health = Elem.Value.Health;
 #if WITH_EDITOR
         DrawDebugBox(World, Elem.Value.WorldLocation, FVector(CellSize*0.5f), FColor::Black, false, 10.f);
@@ -174,7 +174,7 @@ void UGridPuzzleManagerComponent::SpawnEdges()
         const FIntPoint Dir = E.B - E.A;
         const float Yaw = (Dir.X != 0) ? 0.f : 90.f;
 
-        AGridWallActor* Wall = World->SpawnActor<AGridWallActor>(WallClass, Mid, FRotator(0.f, Yaw, 0.f));
+        AGridWallGCActor* Wall = World->SpawnActor<AGridWallGCActor>(WallClass, Mid, FRotator(0.f, Yaw, 0.f));
         Wall->Health = E.Health;
 #if WITH_EDITOR
         DrawDebugLine(World, A, B, FColor::Red, false, 10.f, 0, 10.f);
