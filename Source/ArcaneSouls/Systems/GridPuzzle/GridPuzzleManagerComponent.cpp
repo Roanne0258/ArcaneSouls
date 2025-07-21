@@ -99,6 +99,13 @@ bool UGridPuzzleManagerComponent::IsInBounds(const FIntPoint& Coord) const
     return Coord.X >= 0 && Coord.X < Cols && Coord.Y >= 0 && Coord.Y < Rows;
 }
 
+bool UGridPuzzleManagerComponent::IsFloor(const FIntPoint& Coord) const
+{
+    if (const FGridCellData* Cell = GridMap.Find(Coord))
+        return Cell->CellType == EGridCellType::Floor;
+    return false;
+}
+
 //─────────────────────────────────────────────
 // 건강 동기화 : BeginPlay 에 호출
 void UGridPuzzleManagerComponent::SyncHealthFromPlacedActors()
@@ -187,26 +194,24 @@ void UGridPuzzleManagerComponent::SpawnEdges()
  *──────────────────────────────────────────*/
 void UGridPuzzleManagerComponent::UseFireSpell(const FIntPoint& Cell,const FIntPoint& Dir)
 {
-    // 1) 벽 찾기
-    const FIntPoint Other = Cell + Dir;
-    const FGridEdge Key = MakeEdgeKey(Cell,Other);
-    if (FGridEdge* Edge = EdgeSet.Find(Key))
-    {
-        if (Edge->Health>0) { --Edge->Health; /* TODO: 파괴 비주얼 */ }
-    }
+    /* 1) 자기 발판 –1 */
+    if (FGridCellData* Self = GridMap.Find(Cell))
+        Self->Health = FMath::Max(0, Self->Health - 1);
 
-    // 2) 주변 셀 데미지
-    ApplyDamageAround(Cell);
+    /* 2) 바라보는 벽 –1 */
+    const FIntPoint Other = Cell + Dir;
+    if (FGridEdge* Edge = EdgeSet.Find(MakeEdgeKey(Cell, Other)))
+        Edge->Health = FMath::Max(0, Edge->Health - 1);
+
+    // TODO: 파괴 FX
 }
 
 void UGridPuzzleManagerComponent::UseIceSpell(const FIntPoint& Target)
 {
     if (FGridCellData* Cell = GridMap.Find(Target))
     {
-        if (!Cell->bDestroyed && Cell->Health<3)
-        {
+        if (Cell->CellType == EGridCellType::Floor && Cell->Health < 3)
             ++Cell->Health;
-        }
     }
 }
 

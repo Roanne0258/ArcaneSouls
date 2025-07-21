@@ -93,6 +93,10 @@ public:
     FIntPoint WorldToGrid(const FVector& WorldPos) const;
     FVector   GridToWorld(const FIntPoint& Coord) const;
 
+    /** 좌표 내 유효성 검사 */
+    bool IsInBounds(const FIntPoint& Coord) const;
+    bool IsFloor(const FIntPoint& Coord) const;
+
 protected:
     /*─────────────────────
      * Config (디자이너 설정)
@@ -127,9 +131,6 @@ protected:
     /*─────────────────────
      * 내부 헬퍼 함수
      *─────────────────────*/
-
-    /** 좌표 내 유효성 검사 */
-    bool IsInBounds(const FIntPoint& Coord) const;
 
     /** 셀 데이터 가져오기 */
     FGridCellData* GetCellData(const FIntPoint& Coord);
