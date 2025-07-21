@@ -27,7 +27,7 @@ public:
 
 	/** 이동 또는 변경 시 자동 지면 정렬 여부 */
 	UPROPERTY(EditAnywhere, Category="Placement")
-	bool bAutoAlign = true;
+	bool bAutoAlign = false;
 
 	/** 슬로프 정렬 시 Yaw 회전도 노멀에 맞출지 여부 */
 	UPROPERTY(EditAnywhere, Category="Placement|Slope")
@@ -79,35 +79,35 @@ public:
 	APlacementHelperActor();
 
 	/** 위치를 ResetLocationOrigin 으로 이동 */
-	UFUNCTION(CallInEditor, Category="Placement|Reset")
+	UFUNCTION(CallInEditor, BlueprintCallable, Category="Placement|Reset")
 	void ResetLocation();
 
 	/** 회전을 ResetRotationValue 로 설정 */
-	UFUNCTION(CallInEditor, Category="Placement|Reset")
+	UFUNCTION(CallInEditor, BlueprintCallable, Category="Placement|Reset")
 	void ResetRotation();
 
 	/** XY 무작위 이동 (중심 유지, 반경 RandomRadius) */
-	UFUNCTION(CallInEditor, Category="Placement")
+	UFUNCTION(CallInEditor, BlueprintCallable, Category="Placement")
 	void RandomLocationInRadius();
 
-	/** 지면 정렬 실행 */
-	UFUNCTION(CallInEditor, Category="Placement")
+	/** 지면(Pivot 또는 Mesh Bottom)으로 스냅 */
+	UFUNCTION(CallInEditor, BlueprintCallable, Category="Placement")
 	void AlignToGround();
 
-	/** 슬로프 정렬 (Pitch·Roll 정렬) */
-	UFUNCTION(CallInEditor, Category="Placement")
+	/** 슬로프 정렬 (Pitch·Roll만 맞춤) */
+	UFUNCTION(CallInEditor, BlueprintCallable, Category="Placement")
 	void AlignSlope();
 
-	/** 무작위 Yaw 회전 적용 */
-	UFUNCTION(CallInEditor, Category="Placement")
+	/** 무작위 Yaw 회전 (Step 적용 가능) */
+	UFUNCTION(CallInEditor, BlueprintCallable, Category="Placement")
 	void RandomYaw();
 
-	/** 머티리얼 순환 적용 */
-	UFUNCTION(CallInEditor, Category="MaterialCycler")
+	/** 머티리얼 리스트 순환 적용 */
+	UFUNCTION(CallInEditor, BlueprintCallable, Category="MaterialCycler")
 	void CycleMaterial();
 
 	/** CollisionEnabled 상태 순환 */
-	UFUNCTION(CallInEditor, Category="CollisionToggle")
+	UFUNCTION(CallInEditor, BlueprintCallable, Category="CollisionToggle")
 	void ToggleCollision();
 
 	/* ───────────── Protected Funcs ────────────── */
