@@ -9,33 +9,32 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Controller.h"
+#include "DrawDebugHelpers.h"
+#include "ArcaneSouls/Systems/Interfaces/DamageableInterface.h"
 
 AASPlayerCharacter::AASPlayerCharacter()
 {
-    /* Capsule defaults come from ACharacter */
-
-    // ─ Camera boom
     CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
     CameraBoom->SetupAttachment(RootComponent);
     CameraBoom->TargetArmLength = 350.f;
     CameraBoom->bUsePawnControlRotation = true;
 
-    // ─ Follow camera
     FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
     FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
     FollowCamera->bUsePawnControlRotation = false;
 
-    // Character movement tweaks (optional)
     GetCharacterMovement()->bOrientRotationToMovement = true;
     GetCharacterMovement()->RotationRate = FRotator(0.f, 540.f, 0.f);
     bUseControllerRotationYaw = false;
+
+    GridMgr = CreateDefaultSubobject<UGridPuzzleManagerComponent>(TEXT("GridMgr"));
 }
 
 void AASPlayerCharacter::BeginPlay()
 {
     Super::BeginPlay();
     GridMgr = FindComponentByClass<UGridPuzzleManagerComponent>();
-    /* IMC 등록 */
+    ensureMsgf(GridMgr, TEXT("[Puzzle] GridMgr NOT FOUND!"));
     if (APlayerController* PC = Cast<APlayerController>(GetController()))
     {
         if (ULocalPlayer* LP = PC->GetLocalPlayer())
@@ -43,97 +42,86 @@ void AASPlayerCharacter::BeginPlay()
             if (UEnhancedInputLocalPlayerSubsystem* SubSys =
                 LP->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
             {
-                SubSys->AddMappingContext(IMC_Player, /*Priority=*/0);
+                SubSys->AddMappingContext(IMC_Player, 0);
             }
         }
     }
 }
 
-/* ───────────── Input Bindings ───────────── */
 void AASPlayerCharacter::SetupPlayerInputComponent(UInputComponent* IC)
 {
     Super::SetupPlayerInputComponent(IC);
     UEnhancedInputComponent* EIC = CastChecked<UEnhancedInputComponent>(IC);
 
-    /* ─ Axis ─ */
     EIC->BindAction(IA_Move_Forward , ETriggerEvent::Triggered, this, &AASPlayerCharacter::MoveForwardAxis);
-    EIC->BindAction(IA_Move_Backward, ETriggerEvent::Triggered, this, &AASPlayerCharacter::MoveBackwardAxis); // NEW
-    EIC->BindAction(IA_Move_Left    , ETriggerEvent::Triggered, this, &AASPlayerCharacter::MoveLeftAxis);     // NEW
-    EIC->BindAction(IA_Move_Right   , ETriggerEvent::Triggered, this, &AASPlayerCharacter::MoveRightAxis );
-    EIC->BindAction(IA_Turn ,        ETriggerEvent::Triggered, this, &AASPlayerCharacter::TurnAxis );
+    EIC->BindAction(IA_Move_Backward, ETriggerEvent::Triggered, this, &AASPlayerCharacter::MoveBackwardAxis);
+    EIC->BindAction(IA_Move_Left    , ETriggerEvent::Triggered, this, &AASPlayerCharacter::MoveLeftAxis);
+    EIC->BindAction(IA_Move_Right   , ETriggerEvent::Triggered, this, &AASPlayerCharacter::MoveRightAxis);
+    EIC->BindAction(IA_Turn ,        ETriggerEvent::Triggered, this, &AASPlayerCharacter::TurnAxis);
     EIC->BindAction(IA_LookUp,       ETriggerEvent::Triggered, this, &AASPlayerCharacter::LookUpAxis);
 
-    /* ─ Jump (Enhanced) ─ */
     EIC->BindAction(IA_Jump,  ETriggerEvent::Started,   this, &ACharacter::Jump);
     EIC->BindAction(IA_Jump,  ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 
-    /* ─ Combat / Misc ─ */
-    EIC->BindAction(IA_Attack , ETriggerEvent::Started, this, &AASPlayerCharacter::OnAttack );
-    EIC->BindAction(IA_Dodge  , ETriggerEvent::Started, this, &AASPlayerCharacter::OnDodge  );
+    EIC->BindAction(IA_Attack , ETriggerEvent::Started, this, &AASPlayerCharacter::OnAttack);
+    EIC->BindAction(IA_Dodge  , ETriggerEvent::Started, this, &AASPlayerCharacter::OnDodge);
     EIC->BindAction(IA_Guard  , ETriggerEvent::Started, this, &AASPlayerCharacter::OnGuardStart);
     EIC->BindAction(IA_Guard  , ETriggerEvent::Completed, this, &AASPlayerCharacter::OnGuardEnd);
-    EIC->BindAction(IA_Lockon , ETriggerEvent::Started, this, &AASPlayerCharacter::OnLockOn );
-    EIC->BindAction(IA_Interact, ETriggerEvent::Started, this, &AASPlayerCharacter::OnInteract );
-    EIC->BindAction(IA_Inventory,ETriggerEvent::Started, this, &AASPlayerCharacter::OnInventory );
-    EIC->BindAction(IA_ESC   , ETriggerEvent::Started, this, &AASPlayerCharacter::OnPauseESC );
+    EIC->BindAction(IA_Lockon , ETriggerEvent::Started, this, &AASPlayerCharacter::OnLockOn);
+    EIC->BindAction(IA_Interact, ETriggerEvent::Started, this, &AASPlayerCharacter::OnInteract);
+    EIC->BindAction(IA_Inventory,ETriggerEvent::Started, this, &AASPlayerCharacter::OnInventory);
+    EIC->BindAction(IA_ESC   , ETriggerEvent::Started, this, &AASPlayerCharacter::OnPauseESC);
 
-    /* ─ 기존 Magic ─ */
     EIC->BindAction(IA_CastFire, ETriggerEvent::Started, this, &AASPlayerCharacter::CastFire);
-    EIC->BindAction(IA_CastIce , ETriggerEvent::Started, this, &AASPlayerCharacter::CastIce );
+    EIC->BindAction(IA_CastIce , ETriggerEvent::Started, this, &AASPlayerCharacter::CastIce);
 }
 
-/* ───────── Axis 구현 ───────── */
 void AASPlayerCharacter::MoveForwardAxis(const FInputActionValue& Value)
 {
-    const float Axis =  FMath::Clamp(Value.Get<float>(), -1.f, 1.f);   // +1
+    const float Axis = FMath::Clamp(Value.Get<float>(), -1.f, 1.f);
     if (FMath::IsNearlyZero(Axis)) return;
-
     const FRotator YawRot(0.f, Controller->GetControlRotation().Yaw, 0.f);
-    const FVector  Dir = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
-    AddMovementInput(Dir,  Axis);        // 앞으로
+    const FVector Dir = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
+    AddMovementInput(Dir, Axis);
 }
+
 void AASPlayerCharacter::MoveBackwardAxis(const FInputActionValue& Value)
 {
-    const float Axis =  FMath::Clamp(Value.Get<float>(), -1.f, 1.f);   // +1
+    const float Axis = FMath::Clamp(Value.Get<float>(), -1.f, 1.f);
     if (FMath::IsNearlyZero(Axis)) return;
-
     const FRotator YawRot(0.f, Controller->GetControlRotation().Yaw, 0.f);
-    const FVector  Dir = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
-    AddMovementInput(Dir, -Axis);        // 뒤로
+    const FVector Dir = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
+    AddMovementInput(Dir, -Axis);
 }
 
 void AASPlayerCharacter::MoveRightAxis(const FInputActionValue& Value)
 {
-    const float Axis =  FMath::Clamp(Value.Get<float>(), -1.f, 1.f);
+    const float Axis = FMath::Clamp(Value.Get<float>(), -1.f, 1.f);
     if (FMath::IsNearlyZero(Axis)) return;
-
     const FRotator YawRot(0.f, Controller->GetControlRotation().Yaw, 0.f);
-    const FVector  Dir = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
-    AddMovementInput(Dir,  Axis);        // 오른쪽
+    const FVector Dir = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
+    AddMovementInput(Dir, Axis);
 }
+
 void AASPlayerCharacter::MoveLeftAxis(const FInputActionValue& Value)
 {
-    const float Axis =  FMath::Clamp(Value.Get<float>(), -1.f, 1.f);
+    const float Axis = FMath::Clamp(Value.Get<float>(), -1.f, 1.f);
     if (FMath::IsNearlyZero(Axis)) return;
-
     const FRotator YawRot(0.f, Controller->GetControlRotation().Yaw, 0.f);
-    const FVector  Dir = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
-    AddMovementInput(Dir, -Axis);        // 왼쪽
+    const FVector Dir = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
+    AddMovementInput(Dir, -Axis);
 }
 
-/* 마우스 Y 반전 */
 void AASPlayerCharacter::LookUpAxis(const FInputActionValue& Value)
 {
-    AddControllerPitchInput(-Value.Get<float>());      // 음수 방향으로 입력
+    AddControllerPitchInput(-Value.Get<float>());
 }
-
 
 void AASPlayerCharacter::TurnAxis(const FInputActionValue& Value)
 {
     AddControllerYawInput(Value.Get<float>());
 }
 
-/* ───────────── Magic helpers ───────────── */
 FIntPoint AASPlayerCharacter::GetFacingDir4() const
 {
     const FVector Fwd = Controller ? Controller->GetControlRotation().Vector() : GetActorForwardVector();
@@ -144,36 +132,65 @@ FIntPoint AASPlayerCharacter::GetFacingDir4() const
 
 void AASPlayerCharacter::CastFire()
 {
-    if (!GridMgr) return;
+    FVector CameraLocation;
+    FRotator CameraRotation;
+    GetController()->GetPlayerViewPoint(CameraLocation, CameraRotation);
 
-    const FIntPoint SelfCell = GridMgr->WorldToGrid(GetActorLocation());
-    const FIntPoint Dir      = GetFacingDir4();        // 바라보는 4방향
-    GridMgr->UseFireSpell(SelfCell, Dir);              // 내부에서: SelfFloor–1, Dir Wall–1
+    FVector Start = CameraLocation;
+    FVector End = Start + CameraRotation.Vector() * 2000.f;
+
+    FHitResult Hit;
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(this);
+
+    if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
+    {
+        AActor* HitActor = Hit.GetActor();
+        if (HitActor && HitActor->GetClass()->ImplementsInterface(UDamageableInterface::StaticClass()))
+        {
+            IDamageableInterface::Execute_ApplyGridDamage(HitActor, 1);
+        }
+    }
+
+#if !(UE_BUILD_SHIPPING)
+    DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.f, 0, 2.f);
+#endif
 }
+
+
 
 void AASPlayerCharacter::CastIce()
 {
-    if (!GridMgr) return;
+    if (!GridMgr || !FollowCamera) return;
+    const FVector Start = FollowCamera->GetComponentLocation();
+    const FVector Dir = FollowCamera->GetForwardVector();
+    const FVector End = Start + Dir * 4000.f;
 
-    const FIntPoint SelfCell = GridMgr->WorldToGrid(GetActorLocation());
-    const FIntPoint Dir      = GetFacingDir4();
-    const FIntPoint FrontCell = SelfCell + Dir;
+    FHitResult Hit;
+    FCollisionQueryParams Params(NAME_None, false, this);
+    const bool bHit = GetWorld()->LineTraceSingleByChannel(
+        Hit, Start, End, ECC_GameTraceChannel2, Params);
 
-    /* 앞 셀이 맵 안이고 Floor 면 거기에 적용, 아니면 자기 셀 */
-    const bool bUseFront =
-        GridMgr->IsInBounds(FrontCell) &&
-        GridMgr->IsFloor(FrontCell);          // 새 helper (아래 참고)
+    DrawDebugLine(GetWorld(), Start, End,
+        bHit ? FColor::Cyan : FColor::Blue, false, 2.f, 0, 2.f);
 
-    const FIntPoint Target = bUseFront ? FrontCell : SelfCell;
-    GridMgr->UseIceSpell(Target);             // 내부에서: 0→1→2 (최대 2)
+    if (bHit && GridMgr)
+    {
+        const FIntPoint Target = GridMgr->WorldToGrid(Hit.ImpactPoint);
+        GridMgr->UseIceSpell(Target);
+        UE_LOG(LogAS_GridPuzzle, Warning,
+    TEXT("CastIce Target = %s, IsInBounds=%d, IsFloor=%d"),
+    *Target.ToString(),
+    GridMgr->IsInBounds(Target),
+    GridMgr->IsFloor(Target));
+    }
 }
 
-/* ───────── Action 콜백 빈 틀 ───────── */
-void AASPlayerCharacter::OnAttack   (){ /* TODO: Combo / GAS */ }
-void AASPlayerCharacter::OnDodge    (){ /* TODO: i-frame roll */ }
-void AASPlayerCharacter::OnGuardStart(){ /* bIsGuard=true */ }
-void AASPlayerCharacter::OnGuardEnd (){ /* bIsGuard=false */ }
-void AASPlayerCharacter::OnLockOn   (){ /* Toggle target lock */ }
-void AASPlayerCharacter::OnInteract (){ /* NPC 대화 등 */ }
-void AASPlayerCharacter::OnInventory(){ /* 인벤 UI Toggle  */ }
-void AASPlayerCharacter::OnPauseESC (){ /* Pause Menu     */ }
+void AASPlayerCharacter::OnAttack   () {}
+void AASPlayerCharacter::OnDodge    () {}
+void AASPlayerCharacter::OnGuardStart() {}
+void AASPlayerCharacter::OnGuardEnd () {}
+void AASPlayerCharacter::OnLockOn   () {}
+void AASPlayerCharacter::OnInteract () {}
+void AASPlayerCharacter::OnInventory() {}
+void AASPlayerCharacter::OnPauseESC () {}

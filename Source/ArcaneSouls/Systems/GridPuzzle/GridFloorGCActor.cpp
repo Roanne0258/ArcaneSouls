@@ -14,3 +14,14 @@ AGridFloorGCActor::AGridFloorGCActor()
 	HealthText->SetupAttachment(RootComponent);
 	HealthText->SetRelativeLocation({0,0,60});
 }
+
+void AGridFloorGCActor::ApplyGridDamage_Implementation(int32 Amount)
+{
+	Health = FMath::Max(0, Health - Amount);
+	RefreshVisual();
+
+	if (Health <= 0)
+	{
+		Destroy(); // 필요시 GC로 교체 가능
+	}
+}

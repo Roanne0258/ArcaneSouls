@@ -95,7 +95,6 @@ void AArcaneSoulsCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 
 void AArcaneSoulsCharacter::Move(const FInputActionValue& Value)
 {
-	UE_LOG(LogTemp, Warning, TEXT("dd"));
 	// input is a Vector2D
 	FVector2D MovementVector = Value.Get<FVector2D>();
 

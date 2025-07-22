@@ -17,6 +17,12 @@ AGridCellBaseActor::AGridCellBaseActor()
 	HealthText->SetMobility(EComponentMobility::Movable);    // 부모와 일치
 }
 
+void AGridCellBaseActor::BeginPlay()
+{
+	Super::BeginPlay();
+	RefreshVisual();                     // 플레이 시작 시 1회 보정
+}
+
 void AGridCellBaseActor::RefreshVisual()
 {
 	Health = FMath::Clamp(Health, 0, 3);
@@ -38,3 +44,11 @@ void AGridCellBaseActor::PostEditChangeProperty(FPropertyChangedEvent& e)
 	}
 }
 #endif
+
+void AGridCellBaseActor::ApplyGridDamage_Implementation(int32 Amount)
+{
+	Health = FMath::Max(0, Health - Amount);
+	RefreshVisual();
+	if (Health <= 0)
+		Destroy();
+}

@@ -15,6 +15,7 @@ class ARCANESOULS_API AGridWallGCActor : public AGridCellBaseActor
 	GENERATED_BODY()
 public:
 	AGridWallGCActor();
+	void ApplyGridDamage_Implementation(int32 Amount);
 
 protected:
 	UPROPERTY(VisibleAnywhere)
