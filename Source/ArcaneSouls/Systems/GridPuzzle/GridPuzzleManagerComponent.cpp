@@ -112,20 +112,40 @@ void UGridPuzzleManagerComponent::SyncHealthFromPlacedActors()
 //─────────────────────────────────────────────
 // 스폰(디자이너용) – Editor 빌드에서만 활성
 #if WITH_EDITOR
-void UGridPuzzleManagerComponent::SpawnFloors()
+AGridFloorGCActor* UGridPuzzleManagerComponent::SpawnFloor(const FIntPoint& Coord, int32 Health)
 {
-    if (!FloorClass) return;
-    UWorld* W = GetWorld(); if (!W) return;
+    UWorld* W = GetWorld(); if (!W) return nullptr;
+    FVector WorldPos = GridToWorld(Coord);
 
-    for (const auto& Elem : GridMap)
+    auto* F = W->SpawnActor<AGridFloorGCActor>(FloorClass, WorldPos, FRotator::ZeroRotator);
+    if (F)
     {
-        auto* F = W->SpawnActor<AGridFloorGCActor>(FloorClass,Elem.Value.WorldLocation,FRotator::ZeroRotator);
-        F->Health = Elem.Value.Health;
+        F->GridCoord = Coord;
+        F->Health = Health;
         F->RefreshVisual();
-        FloorActors.Add(Elem.Key,F);
-        DrawDebugBox(W,Elem.Value.WorldLocation,FVector(CellSize*0.5f),FColor::Black,false,10.f);
+        FloorActors.Add(Coord, F);
     }
+    return F;
 }
+
+AGridWallGCActor* UGridPuzzleManagerComponent::SpawnWall(const FGridEdge& E)
+{
+    UWorld* W = GetWorld(); if (!W) return nullptr;
+    const FVector Mid = (GridToWorld(E.A) + GridToWorld(E.B)) * 0.5f;
+    const float Yaw = (E.A.X != E.B.X) ? 0.f : 90.f;
+
+    auto* Wall = W->SpawnActor<AGridWallGCActor>(WallClass, Mid, FRotator(0, Yaw, 0));
+    if (Wall)
+    {
+        Wall->GridCoord = (E.A + E.B) / 2; // 또는 필요시 A/B 중 한쪽
+        Wall->Health = E.Health;
+        Wall->RefreshVisual();
+        WallActors.Add(E, Wall);
+        WallToKey.Add(Wall, E);
+    }
+    return Wall;
+}
+
 void UGridPuzzleManagerComponent::SpawnEdges()
 {
     if (!WallClass) return;
@@ -155,27 +175,18 @@ void UGridPuzzleManagerComponent::RebuildMapping()
 
     UWorld* W = GetWorld(); if (!W) return;
 
-    // Floor 처리 (중복 검사 추가)
+    // Floor
     TArray<AActor*> Floors;
     UGameplayStatics::GetAllActorsOfClass(W, AGridFloorGCActor::StaticClass(), Floors);
     for (auto* A : Floors)
     {
         auto* Floor = Cast<AGridFloorGCActor>(A);
         const FIntPoint GridPos = WorldToGrid(Floor->GetActorLocation());
-
-        if (FloorActors.Contains(GridPos))
-        {
-            UE_LOG(LogAS_GridPuzzle, Warning, TEXT("Duplicate Floor at %s"), *GridPos.ToString());
-            Floor->Destroy(); // 중복된 Floor 제거
-            continue;
-        }
-
+        Floor->GridCoord = GridPos;
         FloorActors.Add(GridPos, Floor);
-        if (FGridCellData* Cell = GridMap.Find(GridPos))
-            Cell->WorldLocation = Floor->GetActorLocation();
     }
 
-    // Wall 처리 (기존 유지, 정확한 Offset 적용)
+    // Wall
     TArray<AActor*> Walls;
     UGameplayStatics::GetAllActorsOfClass(W, AGridWallGCActor::StaticClass(), Walls);
     for (auto* A : Walls)
@@ -183,26 +194,20 @@ void UGridPuzzleManagerComponent::RebuildMapping()
         auto* Wall = Cast<AGridWallGCActor>(A);
         const FVector Mid = Wall->GetActorLocation();
         const bool Horz = FMath::Abs(Wall->GetActorForwardVector().X) > FMath::Abs(Wall->GetActorForwardVector().Y);
-        
         const FVector Offset = Horz ? FVector(CellSize * 0.5f, 0, 0) : FVector(0, CellSize * 0.5f, 0);
         const FIntPoint GridA = WorldToGrid(Mid - Offset);
         const FIntPoint GridB = WorldToGrid(Mid + Offset);
-
         const FGridEdge Key = MakeEdgeKey(GridA, GridB);
-        if (WallActors.Contains(Key))
-        {
-            UE_LOG(LogAS_GridPuzzle, Warning, TEXT("Duplicate Wall at Edge: %s-%s"), *GridA.ToString(), *GridB.ToString());
-            Wall->Destroy(); // 중복 벽 제거
-            continue;
-        }
+
+        // 🟢 GridA, GridB 각각 할당 (반드시 헤더에 UPROPERTY 선언!)
+        Wall->GridA = GridA;
+        Wall->GridB = GridB;
+        Wall->GridCoord = (GridA + GridB) / 2;  // 참고용(중심값, 사실상 안 써도 무방)
 
         WallActors.Add(Key, Wall);
         WallToKey.Add(Wall, Key);
     }
-
-    UE_LOG(LogAS_GridPuzzle, Log, TEXT("[Rebuild] Floors=%d Walls=%d"), FloorActors.Num(), WallActors.Num());
 }
-
 
 
 //─────────────────────────────────────────────
@@ -477,16 +482,39 @@ void UGridPuzzleManagerComponent::RecreateAllActors()
 {
     UWorld* W = GetWorld(); if (!W) return;
 
-    for (auto& Pair : FloorActors) Pair.Value->Destroy();
-    for (auto& Pair : WallActors) Pair.Value->Destroy();
+    // 기존 액터 제거
+    for (auto& Pair : FloorActors) if (Pair.Value) Pair.Value->Destroy();
+    for (auto& Pair : WallActors) if (Pair.Value) Pair.Value->Destroy();
 
     FloorActors.Empty();
     WallActors.Empty();
     WallToKey.Empty();
 
-    SpawnFloors();
-    SpawnEdges();
+    // [1] Floor 자동 생성
+    for (const auto& Elem : GridMap)
+    {
+        const FIntPoint Coord = Elem.Key;
+        const int32 Health = Elem.Value.Health;
+        SpawnFloor(Coord, Health);   // 인자 사용
+    }
+
+    // [2] Wall 자동 생성
+    for (const FGridEdge& E : EdgeSet)
+    {
+        SpawnWall(E);
+    }
 }
+
 #endif
 
 //─────────────────────────────────────────────
+
+AGridFloorGCActor* UGridPuzzleManagerComponent::FindFloorActorByGridCoord(const FIntPoint& Coord) const
+{
+    for (const auto& Elem : FloorActors)
+    {
+        if (Elem.Value && Elem.Value->GridCoord == Coord)
+            return Elem.Value;
+    }
+    return nullptr;
+}

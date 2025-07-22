@@ -20,6 +20,10 @@ public:
 	void ApplyGridDamage_Implementation(int32 Amount);
 	UPROPERTY()
 	UGridPuzzleManagerComponent* GridMgr = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Grid")
+	FIntPoint GridA;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Grid")
+	FIntPoint GridB;
 
 protected:
 	UPROPERTY(VisibleAnywhere)

@@ -88,7 +88,7 @@ public:
     
     UFUNCTION(CallInEditor, Category="Grid|Setup")
     void RecreateAllActors();
-    
+
     void SyncHealthFromPlacedActors();
 
     /* 스펠 */
@@ -106,6 +106,9 @@ public:
     bool IsFloor   (const FIntPoint& Coord) const;
     void PrintGridToWorldCheck();
     void PrintWallKeyCheck();
+    
+    // 그리드 좌표 → Floor 액터 반환
+    AGridFloorGCActor* FindFloorActorByGridCoord(const FIntPoint& Coord) const;
 
 protected:
     /*──────── Config ────────*/
@@ -137,8 +140,9 @@ protected:
     void ApplyDamageAround(const FIntPoint& Center);
     bool CanMove(const FIntPoint& From, const FIntPoint& Dir) const;
 
-    void SpawnFloors();
     void SpawnEdges();
+    AGridFloorGCActor* SpawnFloor(const FIntPoint& Coord, int32 Health);
+    AGridWallGCActor* SpawnWall(const FGridEdge& E);
 
     void RefreshFloorVisual(const FIntPoint& Coord);
     void RefreshWallVisual (const FGridEdge& Edge);

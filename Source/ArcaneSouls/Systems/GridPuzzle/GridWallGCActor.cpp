@@ -28,38 +28,25 @@ void AGridWallGCActor::BeginPlay()
 
 void AGridWallGCActor::ApplyGridDamage_Implementation(int32 Amount)
 {
-    Health = FMath::Max(0, Health - Amount);
-    RefreshVisual();
+	Health = FMath::Max(0, Health - Amount);
+	RefreshVisual();
 
-    // ✅ 주변 바닥도 Amount 만큼 데미지
-    const FVector Center = GetActorLocation();
-    const bool bHorz = FMath::IsNearlyZero(FMath::Fmod(GetActorRotation().Yaw, 180.f));
-    const FVector Offset = bHorz ? FVector(0, 750.f, 0) : FVector(750.f, 0, 0);
+	// ⬇️ 반드시 GridMgr, GridA/B 값 필요 (리빌드매핑에서 할당됨)
+	if (GridMgr)
+	{
+		// 두 끝 좌표를 GridMgr에서 직접 조회해 **FindFloorActorByGridCoord** 사용!
+		for (const FIntPoint& Coord : { GridA, GridB })
+		{
+			if (AGridFloorGCActor* Floor = GridMgr->FindFloorActorByGridCoord(Coord))
+			{
+				Floor->ApplyGridDamage(Amount);
+			}
+		}
+	}
 
-    for (const FVector Dir : { Offset, -Offset })
-    {
-        FVector Pos = Center + Dir;
-        FHitResult Hit;
-        FCollisionQueryParams Params;
-        Params.AddIgnoredActor(this);
-
-        if (GetWorld()->LineTraceSingleByChannel(Hit, Pos + FVector(0,0,200), Pos - FVector(0,0,200), ECC_Visibility, Params))
-        {
-            if (AActor* Target = Hit.GetActor())
-            {
-                if (Target->IsA<AGridFloorGCActor>() && Target->Implements<UDamageableInterface>())
-                {
-                    IDamageableInterface::Execute_ApplyGridDamage(Target, Amount);
-                }
-            }
-        }
-    }
-
-    // ✅ 마지막에 벽 제거
-    if (Health <= 0)
-    {
-        Destroy();
-    }
+	if (Health <= 0)
+		Destroy();
 }
+
 
 

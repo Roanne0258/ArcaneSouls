@@ -19,6 +19,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Grid")
 	int32 Health = 3;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Grid")
+	FIntPoint GridCoord = FIntPoint::ZeroValue;
 	/** Health 텍스트 업데이트 */
 	void RefreshVisual();
 
