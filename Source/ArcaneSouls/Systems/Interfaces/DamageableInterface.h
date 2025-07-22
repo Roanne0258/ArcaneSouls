@@ -30,4 +30,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Damage")
 	int32 GetHealth() const;
+	
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category="Damage")
+	void ApplyGridIce(int32 Amount);
 };

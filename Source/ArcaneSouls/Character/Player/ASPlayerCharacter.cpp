@@ -157,32 +157,29 @@ void AASPlayerCharacter::CastFire()
 #endif
 }
 
-
-
 void AASPlayerCharacter::CastIce()
 {
-    if (!GridMgr || !FollowCamera) return;
+    if (!FollowCamera) return;
     const FVector Start = FollowCamera->GetComponentLocation();
     const FVector Dir = FollowCamera->GetForwardVector();
     const FVector End = Start + Dir * 4000.f;
 
     FHitResult Hit;
     FCollisionQueryParams Params(NAME_None, false, this);
-    const bool bHit = GetWorld()->LineTraceSingleByChannel(
-        Hit, Start, End, ECC_GameTraceChannel2, Params);
+    bool bHit = GetWorld()->LineTraceSingleByChannel(
+        Hit, Start, End, ECC_Visibility, Params); // <-- 채널은 데미지/불과 동일하게
 
     DrawDebugLine(GetWorld(), Start, End,
         bHit ? FColor::Cyan : FColor::Blue, false, 2.f, 0, 2.f);
 
-    if (bHit && GridMgr)
+    if (bHit)
     {
-        const FIntPoint Target = GridMgr->WorldToGrid(Hit.ImpactPoint);
-        GridMgr->UseIceSpell(Target);
-        UE_LOG(LogAS_GridPuzzle, Warning,
-    TEXT("CastIce Target = %s, IsInBounds=%d, IsFloor=%d"),
-    *Target.ToString(),
-    GridMgr->IsInBounds(Target),
-    GridMgr->IsFloor(Target));
+        AActor* HitActor = Hit.GetActor();
+        if (HitActor && HitActor->GetClass()->ImplementsInterface(UDamageableInterface::StaticClass()))
+        {
+            // 바닥 or 벽 모두 ICE 호출 (ApplyGridIce_Implementation 실행)
+            IDamageableInterface::Execute_ApplyGridIce(HitActor, 1);
+        }
     }
 }
 

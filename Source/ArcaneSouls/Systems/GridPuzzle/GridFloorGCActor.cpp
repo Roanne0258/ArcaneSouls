@@ -2,6 +2,8 @@
 
 
 #include "GridFloorGCActor.h"
+
+#include "GridPuzzleManagerComponent.h"
 #include "Components/TextRenderComponent.h"
 #include "GeometryCollection/GeometryCollectionComponent.h"
 
@@ -23,6 +25,13 @@ void AGridFloorGCActor::ApplyGridDamage_Implementation(int32 Amount)
 	if (Health <= 0)
 	{
 		// 필요한 경우 바닥 파괴 가능
-		Destroy();
 	}
+}
+
+void AGridFloorGCActor::ApplyGridIce_Implementation(int32 Amount)
+{
+	// 체력 0이어도 Destroy() 안 함
+	Health = FMath::Clamp(Health + Amount, 0, 3);
+	RefreshVisual();
+	UE_LOG(LogAS_GridPuzzle, Log, TEXT("Floor ICE: Health = %d"), Health);
 }

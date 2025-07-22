@@ -399,24 +399,34 @@ void UGridPuzzleManagerComponent::UseFireSpell(
 // GridLogic 방식 Ice (캐릭터 CastIce → UseIceSpell 호출용)
 void UGridPuzzleManagerComponent::UseIceSpell(const FIntPoint& TargetCell)
 {
-    if (FGridCellData* Cell = GridMap.Find(TargetCell))
+    // 1. 바닥 액터 우선 검색 (좌표 기반)
+    if (AGridFloorGCActor* Floor = FindFloorActorByGridCoord(TargetCell))
     {
-        if (Cell->CellType == EGridCellType::Floor && Cell->Health < 3)
+        if (Floor->Implements<UDamageableInterface>())
         {
-            const int32 Old = Cell->Health;
-            ++Cell->Health;
-            RefreshFloorVisual(TargetCell);
-            UE_LOG(LogAS_GridPuzzle, Warning,
-                   TEXT("Ice Floor %s %d→%d"),
-                   *TargetCell.ToString(), Old, Cell->Health);
+            IDamageableInterface::Execute_ApplyGridIce(Floor, 1);
+            UE_LOG(LogAS_GridPuzzle, Warning, TEXT("[Ice] Floor %s ApplyGridIce(1)"), *TargetCell.ToString());
+            return; // 바닥만 처리, 벽 생략 시 바로 리턴
+        }
+    }
 
-#if !(UE_BUILD_SHIPPING)
-            DrawDebugBox(GetWorld(), GridToWorld(TargetCell),
-                FVector(CellSize * 0.4f), FColor::Cyan, false, 1.f, 0, 2.f);
-#endif
+    // 2. (선택) 벽 액터도 검색/적용 (좌표기반 중앙 또는 인접 벽)
+    for (const auto& Pair : WallActors)
+    {
+        const FGridEdge& Key = Pair.Key;
+        // Key 중심이 TargetCell에 해당 → (A+B)/2 == TargetCell
+        if (((Key.A + Key.B) / 2) == TargetCell)
+        {
+            AGridWallGCActor* Wall = Pair.Value;
+            if (Wall && Wall->Implements<UDamageableInterface>())
+            {
+                IDamageableInterface::Execute_ApplyGridIce(Wall, 1);
+                UE_LOG(LogAS_GridPuzzle, Warning, TEXT("[Ice] Wall Center %s-%s ApplyGridIce(1)"), *Key.A.ToString(), *Key.B.ToString());
+            }
         }
     }
 }
+
 
 
 // 캐릭터 CastIce() 내부에서 사용하는 좌표 검사

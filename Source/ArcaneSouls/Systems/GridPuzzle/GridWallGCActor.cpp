@@ -7,6 +7,7 @@
 #include "GridPuzzleManagerComponent.h"
 #include "Components/TextRenderComponent.h"
 #include "GeometryCollection/GeometryCollectionComponent.h"
+#include "UObject/FastReferenceCollector.h"
 
 AGridWallGCActor::AGridWallGCActor()
 {
@@ -48,5 +49,12 @@ void AGridWallGCActor::ApplyGridDamage_Implementation(int32 Amount)
 		Destroy();
 }
 
+void AGridWallGCActor::ApplyGridIce_Implementation(int32 Amount)
+{
+	if (IsActorBeingDestroyed() || !IsValid(this)) return; // UE5 권장!
+	Health = FMath::Clamp(Health + Amount, 0, 3);
+	RefreshVisual();
+	UE_LOG(LogAS_GridPuzzle, Log, TEXT("Wall ICE: Health = %d"), Health);
+}
 
 

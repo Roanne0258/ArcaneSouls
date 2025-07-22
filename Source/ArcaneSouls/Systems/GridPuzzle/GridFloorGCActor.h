@@ -16,6 +16,7 @@ class ARCANESOULS_API AGridFloorGCActor : public AGridCellBaseActor
 public:
 	AGridFloorGCActor();
 	void ApplyGridDamage_Implementation(int32 Amount);
+	void ApplyGridIce_Implementation(int32 Amount);
 
 protected:
 	UPROPERTY(VisibleAnywhere)

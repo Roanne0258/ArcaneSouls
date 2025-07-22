@@ -18,6 +18,7 @@ public:
 	AGridWallGCActor();
 	void BeginPlay();
 	void ApplyGridDamage_Implementation(int32 Amount);
+	void ApplyGridIce_Implementation(int32 Amount);
 	UPROPERTY()
 	UGridPuzzleManagerComponent* GridMgr = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Grid")
