@@ -99,6 +99,7 @@ public:
     /* 좌표 변환 */
     FIntPoint WorldToGrid(const FVector& WorldPos) const;
     FVector   GridToWorld(const FIntPoint& Coord) const;
+    AActor* FindFloorActor(const FIntPoint& Coord) const;
 
     /* 유효성 */
     bool IsInBounds(const FIntPoint& Coord) const;

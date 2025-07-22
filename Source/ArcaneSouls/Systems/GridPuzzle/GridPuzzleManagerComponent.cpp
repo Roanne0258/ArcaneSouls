@@ -71,6 +71,15 @@ FVector UGridPuzzleManagerComponent::GridToWorld(const FIntPoint& C) const
     return FVector(GridOrigin, 0.f) + FVector(C.X * CellSize, C.Y * CellSize, 0.f);
 }
 
+AActor* UGridPuzzleManagerComponent::FindFloorActor(const FIntPoint& Coord) const
+{
+    if (AGridFloorGCActor* const* FloorPtr = FloorActors.Find(Coord))
+    {
+        return *FloorPtr;
+    }
+    return nullptr;
+}
+
 //─────────────────────────────────────────────
 // Health 동기화
 void UGridPuzzleManagerComponent::SyncHealthFromPlacedActors()

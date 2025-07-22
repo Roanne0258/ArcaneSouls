@@ -6,6 +6,7 @@
 #include "GridCellBaseActor.h"
 #include "GridWallGCActor.generated.h"
 
+class UGridPuzzleManagerComponent;
 /**
  * 
  */
@@ -15,7 +16,10 @@ class ARCANESOULS_API AGridWallGCActor : public AGridCellBaseActor
 	GENERATED_BODY()
 public:
 	AGridWallGCActor();
+	void BeginPlay();
 	void ApplyGridDamage_Implementation(int32 Amount);
+	UPROPERTY()
+	UGridPuzzleManagerComponent* GridMgr = nullptr;
 
 protected:
 	UPROPERTY(VisibleAnywhere)

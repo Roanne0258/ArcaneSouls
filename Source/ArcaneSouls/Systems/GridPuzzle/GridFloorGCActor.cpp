@@ -22,6 +22,7 @@ void AGridFloorGCActor::ApplyGridDamage_Implementation(int32 Amount)
 
 	if (Health <= 0)
 	{
-		Destroy(); // 필요시 GC로 교체 가능
+		// 필요한 경우 바닥 파괴 가능
+		Destroy();
 	}
 }
