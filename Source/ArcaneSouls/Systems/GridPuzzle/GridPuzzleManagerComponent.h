@@ -4,12 +4,12 @@
 #include "Components/ActorComponent.h"
 #include "GridPuzzleManagerComponent.generated.h"
 
-/*─────────────────────────────────────────────
- *  열거형 및 구조체
- *─────────────────────────────────────────────*/
-
 class AGridWallGCActor;
 class AGridFloorGCActor;
+
+///////////////////////////////////////////////////////////
+// 셀 타입 및 구조체 정의
+///////////////////////////////////////////////////////////
 
 UENUM(BlueprintType)
 enum class EGridCellType : uint8
@@ -27,12 +27,12 @@ struct FGridCellData
     EGridCellType CellType = EGridCellType::Floor;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Grid|Cell")
-    int32 Health = 3;                // 0-파괴, 최대 3
+    int32 Health = 3;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Grid|Cell")
     bool bDestroyed = false;
 
-    FVector WorldLocation;           // 스폰 위치 캐시
+    FVector WorldLocation;
 };
 
 USTRUCT(BlueprintType)
@@ -47,7 +47,7 @@ struct FGridEdge
     FIntPoint B;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Grid|Edge")
-    int32 Health = 3;                // 0-파괴, 최대 3
+    int32 Health = 3;
 
     bool operator==(const FGridEdge& Other) const
     {
@@ -60,11 +60,11 @@ FORCEINLINE uint32 GetTypeHash(const FGridEdge& Edge)
     return HashCombine(GetTypeHash(Edge.A), GetTypeHash(Edge.B));
 }
 
-/*─────────────────────────────────────────────
- *  UGridPuzzleManagerComponent
- *─────────────────────────────────────────────*/
-
 DECLARE_LOG_CATEGORY_EXTERN(LogAS_GridPuzzle, Log, All);
+
+///////////////////////////////////////////////////////////
+// UGridPuzzleManagerComponent
+///////////////////////////////////////////////////////////
 
 UCLASS(ClassGroup=(Puzzle), meta=(BlueprintSpawnableComponent))
 class ARCANESOULS_API UGridPuzzleManagerComponent : public UActorComponent
@@ -75,74 +75,87 @@ public:
     UGridPuzzleManagerComponent();
     virtual void BeginPlay() override;
 
-    /* 초기화 • 동기화 */
+    // 그리드 초기화 및 리빌드
     UFUNCTION(CallInEditor, Category="Grid|Setup")
     void InitializeGrid();
 
-    /** 월드에 배치된 Floor/Wall 액터를 그리드 데이터에 매핑  */
     UFUNCTION(CallInEditor, Category="Grid|Setup")
     void RebuildMapping();
 
     UFUNCTION(CallInEditor, Category="Grid|Setup")
     void SpawnMissingActors();
-    
+
     UFUNCTION(CallInEditor, Category="Grid|Setup")
     void RecreateAllActors();
 
     void SyncHealthFromPlacedActors();
 
-    /* 스펠 */
+    // 스펠 처리
     void UseFireSpell(const FIntPoint& PlayerCell, const FIntPoint& Dir);
     void UseIceSpell (const FIntPoint& TargetCell);
     void ApplyTraceFire(const FHitResult& Hit);
 
-    /* 좌표 변환 */
+    // 좌표 변환 및 유효성 검사
     FIntPoint WorldToGrid(const FVector& WorldPos) const;
     FVector   GridToWorld(const FIntPoint& Coord) const;
-    AActor* FindFloorActor(const FIntPoint& Coord) const;
+    bool      IsInBounds(const FIntPoint& Coord) const;
+    bool      IsFloor   (const FIntPoint& Coord) const;
 
-    /* 유효성 */
-    bool IsInBounds(const FIntPoint& Coord) const;
-    bool IsFloor   (const FIntPoint& Coord) const;
+    // 디버그
     void PrintGridToWorldCheck();
     void PrintWallKeyCheck();
-    
-    // 그리드 좌표 → Floor 액터 반환
-    AGridFloorGCActor* FindFloorActorByGridCoord(const FIntPoint& Coord) const;
+
+    // 액터 참조
+    AActor*             FindFloorActor(const FIntPoint& Coord) const;
+    AGridFloorGCActor*  FindFloorActorByGridCoord(const FIntPoint& Coord) const;
 
 protected:
-    /*──────── Config ────────*/
-    UPROPERTY(EditAnywhere, Category="Grid|Config") int32 Rows     = 10;
-    UPROPERTY(EditAnywhere, Category="Grid|Config") int32 Cols     = 10;
-    UPROPERTY(EditAnywhere, Category="Grid|Config") float CellSize = 300.f;
+    // 에디터 설정값
+    UPROPERTY(EditAnywhere, Category="Grid|Config")
+    int32 Rows = 10;
+
+    UPROPERTY(EditAnywhere, Category="Grid|Config")
+    int32 Cols = 10;
+
+    UPROPERTY(EditAnywhere, Category="Grid|Config")
+    float CellSize = 300.f;
+
     UPROPERTY(EditAnywhere, Category="Grid|Config")
     FVector2D GridOrigin = FVector2D::ZeroVector;
 
-    /*──────── Prefabs ───────*/
+    // 프리팹 클래스
     UPROPERTY(EditDefaultsOnly, Category="Grid|Prefabs")
     TSubclassOf<AGridFloorGCActor> FloorClass;
-    UPROPERTY(EditDefaultsOnly, Category="Grid|Prefabs")
-    TSubclassOf<AGridWallGCActor>  WallClass;
 
-    /*──────── Runtime Data ──*/
+    UPROPERTY(EditDefaultsOnly, Category="Grid|Prefabs")
+    TSubclassOf<AGridWallGCActor> WallClass;
+
+    // 런타임 데이터: 셀/엣지 정보
     UPROPERTY(VisibleAnywhere, Category="Grid|Runtime")
     TMap<FIntPoint, FGridCellData> GridMap;
+
     UPROPERTY(VisibleAnywhere, Category="Grid|Runtime")
     TSet<FGridEdge> EdgeSet;
-    UPROPERTY() TMap<AGridWallGCActor*, FGridEdge> WallToKey;
 
-    /* 런타임 액터 참조 맵 */
-    UPROPERTY() TMap<FIntPoint, AGridFloorGCActor*> FloorActors;
-    UPROPERTY() TMap<FGridEdge , AGridWallGCActor*> WallActors;
+    // 런타임 액터 매핑
+    UPROPERTY()
+    TMap<AGridWallGCActor*, FGridEdge> WallToKey;
 
-    /*──────── Helpers ───────*/
+    UPROPERTY()
+    TMap<FIntPoint, AGridFloorGCActor*> FloorActors;
+
+    UPROPERTY()
+    TMap<FGridEdge, AGridWallGCActor*> WallActors;
+    
+protected:
+    // 내부 유틸리티 함수
     FGridCellData* GetCellData(const FIntPoint& Coord);
     void ApplyDamageAround(const FIntPoint& Center);
     bool CanMove(const FIntPoint& From, const FIntPoint& Dir) const;
 
     void SpawnEdges();
     AGridFloorGCActor* SpawnFloor(const FIntPoint& Coord, int32 Health);
-    AGridWallGCActor* SpawnWall(const FGridEdge& E);
+    AGridWallGCActor*  SpawnWall(const FGridEdge& E);
 
     void RefreshFloorVisual(const FIntPoint& Coord);
     void RefreshWallVisual (const FGridEdge& Edge);

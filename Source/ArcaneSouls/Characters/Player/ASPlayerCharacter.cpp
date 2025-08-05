@@ -10,18 +10,25 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Controller.h"
 #include "DrawDebugHelpers.h"
+#include "ArcaneSouls/Systems/Combat/Data/ParryTypes.h"
 #include "ArcaneSouls/Systems/Interfaces/DamageableInterface.h"
+#include "Kismet/GameplayStatics.h"
+#include "ArcaneSouls/Systems/SpellSystem/Projectiles/ASProjectileBase.h"
+
+DEFINE_LOG_CATEGORY_STATIC(LogAS_Magic, Log, All);
 
 AASPlayerCharacter::AASPlayerCharacter()
 {
-    CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-    CameraBoom->SetupAttachment(RootComponent);
-    CameraBoom->TargetArmLength = 350.f;
-    CameraBoom->bUsePawnControlRotation = true;
+    if (CameraBoom)
+    {
+        CameraBoom->TargetArmLength = 350.f;
+        CameraBoom->bUsePawnControlRotation = true;
+    }
 
-    FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-    FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
-    FollowCamera->bUsePawnControlRotation = false;
+    if (FollowCamera)
+    {
+        FollowCamera->bUsePawnControlRotation = false;
+    }
 
     GetCharacterMovement()->bOrientRotationToMovement = true;
     GetCharacterMovement()->RotationRate = FRotator(0.f, 540.f, 0.f);
@@ -65,7 +72,7 @@ void AASPlayerCharacter::SetupPlayerInputComponent(UInputComponent* IC)
 
     EIC->BindAction(IA_Attack , ETriggerEvent::Started, this, &AASPlayerCharacter::OnAttack);
     EIC->BindAction(IA_Dodge  , ETriggerEvent::Started, this, &AASPlayerCharacter::OnDodge);
-    EIC->BindAction(IA_Guard  , ETriggerEvent::Started, this, &AASPlayerCharacter::OnGuardStart);
+    EIC->BindAction(IA_Guard  , ETriggerEvent::Started, this, &AASPlayerCharacter::TryParry);
     EIC->BindAction(IA_Guard  , ETriggerEvent::Completed, this, &AASPlayerCharacter::OnGuardEnd);
     EIC->BindAction(IA_Lockon , ETriggerEvent::Started, this, &AASPlayerCharacter::OnLockOn);
     EIC->BindAction(IA_Interact, ETriggerEvent::Started, this, &AASPlayerCharacter::OnInteract);
@@ -183,11 +190,64 @@ void AASPlayerCharacter::CastIce()
     }
 }
 
-void AASPlayerCharacter::OnAttack   () {}
+void AASPlayerCharacter::OnAttack()
+{
+    CastMagic();
+}
 void AASPlayerCharacter::OnDodge    () {}
-void AASPlayerCharacter::OnGuardStart() {}
-void AASPlayerCharacter::OnGuardEnd () {}
+void AASPlayerCharacter::OnGuardStart()
+{
+    UE_LOG(LogTemp, Warning, TEXT("🛡️ Guard Started"));
+
+    // 임시 이펙트나 사운드 트리거
+
+}
+
+void AASPlayerCharacter::OnGuardEnd()
+{
+    UE_LOG(LogTemp, Warning, TEXT("🛑 Guard Ended"));
+
+
+    // 이펙트 제거 또는 상태 초기화
+}
 void AASPlayerCharacter::OnLockOn   () {}
 void AASPlayerCharacter::OnInteract () {}
 void AASPlayerCharacter::OnInventory() {}
 void AASPlayerCharacter::OnPauseESC () {}
+
+float AASPlayerCharacter::GetMagicPower() const
+{
+    return MagicPower;
+}
+
+
+void AASPlayerCharacter::CastMagic()
+{
+    if (!MagicProjectileClass) return;
+
+    // 1) Spawn 위치/회전
+    FVector SpawnLoc = GetMesh()->GetSocketLocation(HandSocketName);
+    FRotator SpawnRot = GetControlRotation();
+
+    // 2) Spawn 파라미터
+    FActorSpawnParameters Params;
+    Params.Owner     = this;
+    Params.Instigator= this;
+
+    // 3) 프로젝타일 스폰
+    AASProjectileBase* Proj = GetWorld()
+        ->SpawnActor<AASProjectileBase>(MagicProjectileClass,
+                                        SpawnLoc, SpawnRot, Params);
+    if (!Proj) return;
+
+    // 4) InitProjectile 호출
+    Proj->InitProjectile(
+        MagicProjectileSpeed,       // InSpeed
+        MagicBaseDamage,            // InBaseDamage
+        MagicDamageScale,           // InDamageScale
+        EParryElementType::None     // InElement (속성 마법이 아니면 None)
+    );
+
+    UE_LOG(LogAS_Magic, Log, TEXT("CastMagic: Spawned %s (Speed=%.0f, BaseDmg=%.1f)"),
+           *Proj->GetName(), MagicProjectileSpeed, MagicBaseDamage);
+}

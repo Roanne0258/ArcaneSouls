@@ -9,18 +9,30 @@
 
 DEFINE_LOG_CATEGORY(LogAS_GridPuzzle);
 
-//─────────────────────────────────────────────
-// 방향 상수
-static const FIntPoint DirRight(1,0), DirUp(0,1);
-static const FIntPoint AroundOffsets[5]={{0,0},{1,0},{-1,0},{0,1},{0,-1}};
+// ─────────────────────────────────────────────
+// 유틸리티 상수 및 헬퍼 함수
+// ─────────────────────────────────────────────
 
-static bool IsPointLess(const FIntPoint& A,const FIntPoint& B)
-{ return (A.X<B.X) || (A.X==B.X && A.Y<B.Y); }
+// 방향 상수 정의
+static const FIntPoint DirRight(1, 0), DirUp(0, 1);
+static const FIntPoint AroundOffsets[5] = { {0,0}, {1,0}, {-1,0}, {0,1}, {0,-1} };
 
-static FGridEdge MakeEdgeKey(const FIntPoint& P1,const FIntPoint& P2,int32 Default=3)
-{ return IsPointLess(P1,P2) ? FGridEdge{P1,P2,Default} : FGridEdge{P2,P1,Default}; }
+// FIntPoint 정렬 보조 함수
+static bool IsPointLess(const FIntPoint& A, const FIntPoint& B)
+{
+    return (A.X < B.X) || (A.X == B.X && A.Y < B.Y);
+}
 
-//─────────────────────────────────────────────
+// GridEdge 생성 유틸 (좌표 순서 정렬 포함)
+static FGridEdge MakeEdgeKey(const FIntPoint& P1, const FIntPoint& P2, int32 Default = 3)
+{
+    return IsPointLess(P1, P2) ? FGridEdge{P1, P2, Default} : FGridEdge{P2, P1, Default};
+}
+
+// ─────────────────────────────────────────────
+// 컴포넌트 생성자 및 BeginPlay 초기 설정
+// ─────────────────────────────────────────────
+
 UGridPuzzleManagerComponent::UGridPuzzleManagerComponent()
 {
     PrimaryComponentTick.bCanEverTick = false;
@@ -36,7 +48,6 @@ void UGridPuzzleManagerComponent::BeginPlay()
     RebuildMapping();
     SyncHealthFromPlacedActors();
 }
-
 
 //─────────────────────────────────────────────
 // 그리드 초기화(로직 전용)

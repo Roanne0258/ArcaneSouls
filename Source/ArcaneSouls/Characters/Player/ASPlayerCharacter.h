@@ -4,9 +4,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "ArcaneSouls/Characters/ASCharacterBase.h"
 #include "GameFramework/Character.h"
 #include "ASPlayerCharacter.generated.h"
 
+class AASProjectileBase;
 /* ───── Forward Decls ───── */
 class UInputMappingContext;
 class UInputAction;
@@ -17,7 +19,7 @@ struct FInputActionValue;
 
 /* ────────────────────────────────────────────────────────────── */
 UCLASS(Blueprintable)
-class ARCANESOULS_API AASPlayerCharacter : public ACharacter
+class ARCANESOULS_API AASPlayerCharacter : public AASCharacterBase
 {
     GENERATED_BODY()
 
@@ -28,18 +30,42 @@ public:
     UFUNCTION(BlueprintCallable, Category="Puzzle|Magic") void CastFire();
     UFUNCTION(BlueprintCallable, Category="Puzzle|Magic") void CastIce();
 
+    /** 현재 매직 파워 반환 */
+    UFUNCTION(BlueprintCallable, Category="Stats")
+    float GetMagicPower() const;
+
+    UFUNCTION()
+    void CastMagic();
 protected:
     /* ───── ACharacter overrides ───── */
     virtual void BeginPlay() override;
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
-    /* ───── Components ───── */
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera")
-    USpringArmComponent* CameraBoom = nullptr;
+    /** 매직 스탯 (예: Intelligence 기반) */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Stats")
+    float MagicPower = 1.0f;
+    // ─── Magic Settings ───────────────────────────────────────
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera")
-    UCameraComponent* FollowCamera = nullptr;
+    /** 프로젝타일 스폰 클래스 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Magic")
+    TSubclassOf<AASProjectileBase> MagicProjectileClass;
 
+    /** 발사 지점으로 사용할 메쉬 소켓 이름 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Magic")
+    FName HandSocketName = TEXT("Hand_R");
+
+    /** 프로젝타일 초기 속도 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Magic", meta=(ClampMin="0.0"))
+    float MagicProjectileSpeed = 2500.f;
+
+    /** 프로젝타일 기본 데미지 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Magic", meta=(ClampMin="0.0"))
+    float MagicBaseDamage = 10.f;
+
+    /** 플레이어 스탯(MagicPower) 곱연산 계수 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Magic", meta=(ClampMin="0.0"))
+    float MagicDamageScale = 1.0f;
+    
     /* ───── Enhanced-Input: Mapping Context ───── */
     UPROPERTY(EditDefaultsOnly, Category="Input|IMC")
     UInputMappingContext* IMC_Player = nullptr;
@@ -80,6 +106,8 @@ protected:
     void OnPauseESC ();
 
     /* ───── Grid Puzzle Helpers ───── */
-    UPROPERTY() UGridPuzzleManagerComponent* GridMgr = nullptr;
-    FIntPoint  GetFacingDir4() const;
+    UPROPERTY()
+    UGridPuzzleManagerComponent* GridMgr = nullptr;
+
+    FIntPoint GetFacingDir4() const;
 };

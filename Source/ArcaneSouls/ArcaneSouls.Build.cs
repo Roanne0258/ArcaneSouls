@@ -6,6 +6,7 @@ public class ArcaneSouls : ModuleRules
 {
 	public ArcaneSouls(ReadOnlyTargetRules Target) : base(Target)
 	{
+		PrivateDependencyModuleNames.AddRange(new string[] { "AIModule" });
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
 		/* ────────────── Runtime Modules ────────────── */
@@ -27,8 +28,12 @@ public class ArcaneSouls : ModuleRules
 			/* UI */
 			"UMG",
 			"Slate",
-			"SlateCore"
+			"SlateCore",
+	
+			/* AI */
+			"AIModule"
 		});
+
 
 		/* ────────────── Editor-only Modules ────────────── */
 		if (Target.bBuildEditor)

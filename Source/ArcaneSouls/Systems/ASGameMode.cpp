@@ -1,6 +1,6 @@
 #include "ASGameMode.h"
-#include "ArcaneSouls/Character/Player/ASPlayerCharacter.h"          // Default Pawn
-#include "ArcaneSouls/Character/Player/ASPlayerController.h"         // 커스텀 Controller (Enhanced Input 용)
+#include "ArcaneSouls/Characters/Player/ASPlayerCharacter.h"          // Default Pawn
+#include "ArcaneSouls/Characters/Player/ASPlayerController.h"         // 커스텀 Controller (Enhanced Input 용)
 #include "UObject/ConstructorHelpers.h"
 
 AASGameMode::AASGameMode()
