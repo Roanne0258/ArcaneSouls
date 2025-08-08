@@ -52,3 +52,9 @@ Content/Marketplace/
 
 /Prompt_ArcaneSouls.txt
 /gpt/
+
+@"
+# local helpers
+/code_bundle.txt
+/git_to_gpt.bat
+"@ | Add-Content .gitignore
