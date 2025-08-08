@@ -18,11 +18,20 @@ class ARCANESOULS_API AASProjectileBase : public AActor
 public:
 	AASProjectileBase();
 
+	// 호출함수
+	void InitVelocity(const FVector& Velocity);
+	void SetDamage(float NewDamage);
+
 	/** 기본값 세팅 */
 	UFUNCTION(BlueprintCallable, Category="Projectile")
 	void InitProjectile(float InSpeed, float InBaseDamage, float InDamageScale, EParryElementType InElement);
 
 protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UProjectileMovementComponent* ProjectileMovement;
+
+	// 실제 데미지 값
+	float Damage = 0.f;
 	// ■ 콜리전
 	UPROPERTY(VisibleAnywhere) USphereComponent* CollisionComp;
 	// ■ 움직임

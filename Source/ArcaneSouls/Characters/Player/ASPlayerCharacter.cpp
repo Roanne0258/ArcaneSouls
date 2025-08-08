@@ -12,6 +12,7 @@
 #include "DrawDebugHelpers.h"
 #include "ArcaneSouls/Systems/Combat/Data/ParryTypes.h"
 #include "ArcaneSouls/Systems/Interfaces/DamageableInterface.h"
+#include "ArcaneSouls/Systems/SpellSystem/Component/ASSpellComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "ArcaneSouls/Systems/SpellSystem/Projectiles/ASProjectileBase.h"
 
@@ -29,7 +30,7 @@ AASPlayerCharacter::AASPlayerCharacter()
     {
         FollowCamera->bUsePawnControlRotation = false;
     }
-
+    SpellComp = CreateDefaultSubobject<UASSpellComponent>(TEXT("SpellComp"));
     GetCharacterMovement()->bOrientRotationToMovement = true;
     GetCharacterMovement()->RotationRate = FRotator(0.f, 540.f, 0.f);
     bUseControllerRotationYaw = false;
@@ -79,8 +80,18 @@ void AASPlayerCharacter::SetupPlayerInputComponent(UInputComponent* IC)
     EIC->BindAction(IA_Inventory,ETriggerEvent::Started, this, &AASPlayerCharacter::OnInventory);
     EIC->BindAction(IA_ESC   , ETriggerEvent::Started, this, &AASPlayerCharacter::OnPauseESC);
 
-    EIC->BindAction(IA_CastFire, ETriggerEvent::Started, this, &AASPlayerCharacter::CastFire);
-    EIC->BindAction(IA_CastIce , ETriggerEvent::Started, this, &AASPlayerCharacter::CastIce);
+    // ─── Magic Charge 바인딩 ───────────────────────────────────────
+    // 누르면 캐스팅 시작, 떼면 발사, 취소 버튼으로 전부 취소
+    EIC->BindAction(IA_CastMagic,     ETriggerEvent::Started,   SpellComp, &UASSpellComponent::StartCharge);
+    EIC->BindAction(IA_CastMagic,     ETriggerEvent::Completed, SpellComp, &UASSpellComponent::ReleaseCharge);
+    EIC->BindAction(IA_CancelCast,    ETriggerEvent::Started,   SpellComp, &UASSpellComponent::CancelCharge);
+
+    // 슬롯 선택
+    EIC->BindAction(IA_SelectSpell1, ETriggerEvent::Started, this, &AASPlayerCharacter::SelectSpell1);
+    EIC->BindAction(IA_SelectSpell2, ETriggerEvent::Started, this, &AASPlayerCharacter::SelectSpell2);
+    EIC->BindAction(IA_SelectSpell3, ETriggerEvent::Started, this, &AASPlayerCharacter::SelectSpell3);
+    EIC->BindAction(IA_SelectSpell4, ETriggerEvent::Started, this, &AASPlayerCharacter::SelectSpell4);
+    EIC->BindAction(IA_SelectSpell5, ETriggerEvent::Started, this, &AASPlayerCharacter::SelectSpell5);
 }
 
 void AASPlayerCharacter::MoveForwardAxis(const FInputActionValue& Value)
@@ -192,7 +203,6 @@ void AASPlayerCharacter::CastIce()
 
 void AASPlayerCharacter::OnAttack()
 {
-    CastMagic();
 }
 void AASPlayerCharacter::OnDodge    () {}
 void AASPlayerCharacter::OnGuardStart()
@@ -215,39 +225,30 @@ void AASPlayerCharacter::OnInteract () {}
 void AASPlayerCharacter::OnInventory() {}
 void AASPlayerCharacter::OnPauseESC () {}
 
+void AASPlayerCharacter::SelectSpell1(const FInputActionValue& Value) { SpellComp->SetActiveSpellIndex(0); }
+void AASPlayerCharacter::SelectSpell2(const FInputActionValue& Value) { SpellComp->SetActiveSpellIndex(1); }
+void AASPlayerCharacter::SelectSpell3(const FInputActionValue& Value) { SpellComp->SetActiveSpellIndex(2); }
+void AASPlayerCharacter::SelectSpell4(const FInputActionValue& Value) { SpellComp->SetActiveSpellIndex(3); }
+void AASPlayerCharacter::SelectSpell5(const FInputActionValue& Value) { SpellComp->SetActiveSpellIndex(4); }
+
+// --- GetMagicPower 정의 ---
 float AASPlayerCharacter::GetMagicPower() const
 {
-    return MagicPower;
+    // 컴포넌트 쪽에 MagicPower가 있으면 그걸 반환하거나,
+    // 만약 ASPlayerCharacter 자체에 MagicPower 프로퍼티가 있었다면 그대로 반환
+    if (SpellComp)
+        return SpellComp->GetMagicPower();  
+    return 1.0f;
 }
 
-
-void AASPlayerCharacter::CastMagic()
+// --- MP 접근자 정의 ---
+float AASPlayerCharacter::GetCurrentMP() const
 {
-    if (!MagicProjectileClass) return;
+    return CurrentMP;  // CurrentMP는 헤더에서 UPROPERTY로 관리된 값이어야 합니다
+}
 
-    // 1) Spawn 위치/회전
-    FVector SpawnLoc = GetMesh()->GetSocketLocation(HandSocketName);
-    FRotator SpawnRot = GetControlRotation();
-
-    // 2) Spawn 파라미터
-    FActorSpawnParameters Params;
-    Params.Owner     = this;
-    Params.Instigator= this;
-
-    // 3) 프로젝타일 스폰
-    AASProjectileBase* Proj = GetWorld()
-        ->SpawnActor<AASProjectileBase>(MagicProjectileClass,
-                                        SpawnLoc, SpawnRot, Params);
-    if (!Proj) return;
-
-    // 4) InitProjectile 호출
-    Proj->InitProjectile(
-        MagicProjectileSpeed,       // InSpeed
-        MagicBaseDamage,            // InBaseDamage
-        MagicDamageScale,           // InDamageScale
-        EParryElementType::None     // InElement (속성 마법이 아니면 None)
-    );
-
-    UE_LOG(LogAS_Magic, Log, TEXT("CastMagic: Spawned %s (Speed=%.0f, BaseDmg=%.1f)"),
-           *Proj->GetName(), MagicProjectileSpeed, MagicBaseDamage);
+void AASPlayerCharacter::ModifyMP(float Delta)
+{
+    // MP 최소 0, 최대 MaxMP 범위로 클램프
+    CurrentMP = FMath::Clamp(CurrentMP + Delta, 0.0f, MaxMP);
 }

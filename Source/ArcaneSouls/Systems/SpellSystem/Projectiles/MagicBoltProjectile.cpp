@@ -37,25 +37,11 @@ void AMagicBoltProjectile::BeginPlay()
 	// 필요 시 추가 초기화
 }
 
-void AMagicBoltProjectile::OnHit(
-	UPrimitiveComponent* HitComp,
-	AActor* OtherActor,
-	UPrimitiveComponent* OtherComp,
-	FVector NormalImpulse,
-	const FHitResult& Hit)
+void AMagicBoltProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	if (OtherActor && OtherActor != GetOwner())
+	if (OtherActor && OtherActor != this && Damage > 0)
 	{
-		// 데미지 계산
-		float PlayerMagicPower = 0.f;
-		if (APawn* Inst = Cast<APawn>(GetOwner()))
-			PlayerMagicPower = Cast<AASPlayerCharacter>(Inst)->GetMagicPower();
-
-		float FinalDamage = BaseDamage + PlayerMagicPower * DamageScale;
-		UGameplayStatics::ApplyDamage(OtherActor, FinalDamage, GetInstigatorController(),
-									  this, UDamageType::StaticClass());
-
-		// 이펙트 재생 로직 등 필요 시 HandleImpact 호출
-		Destroy();
+		UGameplayStatics::ApplyDamage(OtherActor, Damage, GetInstigatorController(), this, nullptr);
 	}
+	Destroy();
 }

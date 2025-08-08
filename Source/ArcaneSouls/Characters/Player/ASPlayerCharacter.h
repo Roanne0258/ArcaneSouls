@@ -8,6 +8,7 @@
 #include "GameFramework/Character.h"
 #include "ASPlayerCharacter.generated.h"
 
+class UASSpellComponent;
 class AASProjectileBase;
 /* ───── Forward Decls ───── */
 class UInputMappingContext;
@@ -25,7 +26,7 @@ class ARCANESOULS_API AASPlayerCharacter : public AASCharacterBase
 
 public:
     AASPlayerCharacter();
-
+    
     /* ───── Gameplay Actions ───── */
     UFUNCTION(BlueprintCallable, Category="Puzzle|Magic") void CastFire();
     UFUNCTION(BlueprintCallable, Category="Puzzle|Magic") void CastIce();
@@ -33,39 +34,23 @@ public:
     /** 현재 매직 파워 반환 */
     UFUNCTION(BlueprintCallable, Category="Stats")
     float GetMagicPower() const;
-
-    UFUNCTION()
-    void CastMagic();
+    
+    // MP 관련 함수들
+    float GetCurrentMP() const;
+    void ModifyMP(float Delta);
 protected:
     /* ───── ACharacter overrides ───── */
     virtual void BeginPlay() override;
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
-    /** 매직 스탯 (예: Intelligence 기반) */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Stats")
-    float MagicPower = 1.0f;
-    // ─── Magic Settings ───────────────────────────────────────
+    // Components
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
+    UASSpellComponent* SpellComp;
 
-    /** 프로젝타일 스폰 클래스 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Magic")
-    TSubclassOf<AASProjectileBase> MagicProjectileClass;
-
-    /** 발사 지점으로 사용할 메쉬 소켓 이름 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Magic")
-    FName HandSocketName = TEXT("Hand_R");
-
-    /** 프로젝타일 초기 속도 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Magic", meta=(ClampMin="0.0"))
-    float MagicProjectileSpeed = 2500.f;
-
-    /** 프로젝타일 기본 데미지 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Magic", meta=(ClampMin="0.0"))
-    float MagicBaseDamage = 10.f;
-
-    /** 플레이어 스탯(MagicPower) 곱연산 계수 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Magic", meta=(ClampMin="0.0"))
-    float MagicDamageScale = 1.0f;
-    
+    /* ───── Grid Puzzle Helpers ───── */
+    UPROPERTY()
+    UGridPuzzleManagerComponent* GridMgr = nullptr;
+   
     /* ───── Enhanced-Input: Mapping Context ───── */
     UPROPERTY(EditDefaultsOnly, Category="Input|IMC")
     UInputMappingContext* IMC_Player = nullptr;
@@ -105,9 +90,30 @@ protected:
     void OnInventory();
     void OnPauseESC ();
 
-    /* ───── Grid Puzzle Helpers ───── */
-    UPROPERTY()
-    UGridPuzzleManagerComponent* GridMgr = nullptr;
+    // ─── 슬롯 선택용 InputAction ─────────────────────
+    UPROPERTY(EditDefaultsOnly, Category="Input|IA") 
+    UInputAction* IA_SelectSpell1 = nullptr;
+    UPROPERTY(EditDefaultsOnly, Category="Input|IA") 
+    UInputAction* IA_SelectSpell2 = nullptr;
+    UPROPERTY(EditDefaultsOnly, Category="Input|IA") 
+    UInputAction* IA_SelectSpell3 = nullptr;
+    UPROPERTY(EditDefaultsOnly, Category="Input|IA") 
+    UInputAction* IA_SelectSpell4 = nullptr;
+    UPROPERTY(EditDefaultsOnly, Category="Input|IA") 
+    UInputAction* IA_SelectSpell5 = nullptr;
+
+    // ─── Cast·Cancel용 InputAction ───────────────────
+    UPROPERTY(EditDefaultsOnly, Category="Input|IA") 
+    UInputAction* IA_CastMagic  = nullptr;
+    UPROPERTY(EditDefaultsOnly, Category="Input|IA") 
+    UInputAction* IA_CancelCast = nullptr;
+
+    // 슬롯 선택 콜백
+    void SelectSpell1(const FInputActionValue& Value);
+    void SelectSpell2(const FInputActionValue& Value);
+    void SelectSpell3(const FInputActionValue& Value);
+    void SelectSpell4(const FInputActionValue& Value);
+    void SelectSpell5(const FInputActionValue& Value);
 
     FIntPoint GetFacingDir4() const;
 };

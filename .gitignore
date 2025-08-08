@@ -49,3 +49,6 @@ Content/Marketplace/
 
 # JetBrains Rider / IntelliJ
 .idea/
+
+/Prompt_ArcaneSouls.txt
+/gpt/
