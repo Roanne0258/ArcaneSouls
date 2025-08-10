@@ -61,8 +61,10 @@ void AASPlayerCharacter::SetupPlayerInputComponent(UInputComponent* IC)
 
     EIC->BindAction(IA_Attack , ETriggerEvent::Started, this, &AASPlayerCharacter::OnAttack);
     EIC->BindAction(IA_Dodge  , ETriggerEvent::Started, this, &AASPlayerCharacter::OnDodge);
-    EIC->BindAction(IA_Guard  , ETriggerEvent::Started, this, &AASPlayerCharacter::OnGuardPressed);
-    EIC->BindAction(IA_Guard  , ETriggerEvent::Completed, this, &AASPlayerCharacter::OnGuardEnd);
+    // Guard: 탭/홀드 분리 흐름
+    EIC->BindAction(IA_Guard  , ETriggerEvent::Started,   this, &AASPlayerCharacter::OnGuardStarted);
+    EIC->BindAction(IA_Guard  , ETriggerEvent::Triggered, this, &AASPlayerCharacter::OnGuardTick);
+    EIC->BindAction(IA_Guard  , ETriggerEvent::Completed, this, &AASPlayerCharacter::OnGuardCompleted);
     EIC->BindAction(IA_Lockon , ETriggerEvent::Started, this, &AASPlayerCharacter::OnLockOn);
     EIC->BindAction(IA_Interact, ETriggerEvent::Started, this, &AASPlayerCharacter::OnInteract);
     EIC->BindAction(IA_Inventory,ETriggerEvent::Started, this, &AASPlayerCharacter::OnInventory);
@@ -196,17 +198,39 @@ void AASPlayerCharacter::OnDodge    () {}
 
 void AASPlayerCharacter::OnGuardEnd(const FInputActionValue& /*Value*/)
 {
-    AASCharacterBase::OnGuardEnd(); // ← 이걸로 교체
+    // 유지: 기존 바인딩을 쓰는 외부가 있을 수 있어 남겨둠
+    AASCharacterBase::OnGuardEnd();
 }
+
 void AASPlayerCharacter::OnGuardPressed(const FInputActionValue& /*Value*/)
 {
-    if (ParryComponent)
+    // 유지: 기존 바인딩 호환용(내부에서는 새 플로우 사용)
+    if (ParryComponent) { ParryComponent->EvaluateParry(); }
+    else { OnGuardStart(); }
+}
+
+void AASPlayerCharacter::OnGuardStarted(const FInputActionValue& /*Value*/)
+{
+    GuardPressStartTime = GetWorld()->GetTimeSeconds();
+    bGuardHeld = true;
+    AASCharacterBase::OnGuardStart();
+}
+
+void AASPlayerCharacter::OnGuardTick(const FInputActionValue& /*Value*/)
+{
+    if (!bGuardHeld) { return; }
+    // 필요 시 유지 비용/이펙트 등을 여기서 처리
+}
+
+void AASPlayerCharacter::OnGuardCompleted(const FInputActionValue& /*Value*/)
+{
+    const double Held = GetWorld()->GetTimeSeconds() - GuardPressStartTime;
+    bGuardHeld = false;
+    AASCharacterBase::OnGuardEnd();
+
+    if (Held <= GuardTapThresholdSec && ParryComponent)
     {
-        ParryComponent->EvaluateParry();
-    }
-    else
-    {
-        OnGuardStart();
+        ParryComponent->EvaluateParry(); // 탭 입력은 패링 판정
     }
 }
 void AASPlayerCharacter::OnLockOn   () {}

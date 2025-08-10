@@ -27,18 +27,18 @@ void UASFinisherManagerComponent::PlayFinisher(AActor* Target, AActor* Instigato
 	// 1. 프리즈 + 슬로우모션
 	StartTimeDilation();
 
-	// 2. 0.15초 후 몽타주 시작 (타이밍 맞춤)
-	GetWorld()->GetTimerManager().SetTimer(
-		FinisherTimer, this, &UASFinisherManagerComponent::PlayMontage, 0.15f, false
-	);
+    // 2. 지연 후 몽타주 시작 (타이밍 파라미터)
+    GetWorld()->GetTimerManager().SetTimer(
+        FinisherTimer, this, &UASFinisherManagerComponent::PlayMontage, MontageDelaySec, false
+    );
 }
 
 void UASFinisherManagerComponent::StartTimeDilation()
 {
-	UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 0.3f);
+    UGameplayStatics::SetGlobalTimeDilation(GetWorld(), GlobalTimeDilation);
 	if (OwnerCharacter && OwnerCharacter->GetMesh())
 	{
-		OwnerCharacter->CustomTimeDilation = 0.05f; // 플레이어만 더 느리게
+        OwnerCharacter->CustomTimeDilation = PlayerTimeDilation; // 플레이어만 더 느리게
 	}
 
 	// 오디오 Duck 등은 Audio Manager에서 처리 (🛠 업데이트 예정)
@@ -52,10 +52,10 @@ void UASFinisherManagerComponent::PlayMontage()
 	AnimInst->Montage_Play(FinisherMontage);
 	AnimInst->Montage_JumpToSection(FName("Finisher_0"), FinisherMontage);
 
-	// 종료 예약
-	GetWorld()->GetTimerManager().SetTimer(
-		FinisherTimer, this, &UASFinisherManagerComponent::EndFinisher, 1.95f, false
-	);
+    // 종료 예약 (파라미터)
+    GetWorld()->GetTimerManager().SetTimer(
+        FinisherTimer, this, &UASFinisherManagerComponent::EndFinisher, CutsceneLengthSec, false
+    );
 }
 
 void UASFinisherManagerComponent::EndFinisher()

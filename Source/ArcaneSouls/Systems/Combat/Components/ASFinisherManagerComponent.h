@@ -40,6 +40,19 @@ protected:
 
 	FTimerHandle FinisherTimer;
 
+    // [Tuning] 파라미터화된 시간/연출
+    UPROPERTY(EditDefaultsOnly, Category="Finisher|Time")
+    float GlobalTimeDilation = 0.3f;
+
+    UPROPERTY(EditDefaultsOnly, Category="Finisher|Time")
+    float PlayerTimeDilation = 0.05f;
+
+    UPROPERTY(EditDefaultsOnly, Category="Finisher|Timing")
+    float MontageDelaySec = 0.15f;
+
+    UPROPERTY(EditDefaultsOnly, Category="Finisher|Timing")
+    float CutsceneLengthSec = 1.95f;
+
 protected:
 	// Functions
 	virtual void BeginPlay() override;

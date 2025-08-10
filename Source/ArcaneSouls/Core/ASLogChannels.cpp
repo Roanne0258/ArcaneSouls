@@ -1,2 +1,3 @@
 #include "ASLogChannels.h"
 DEFINE_LOG_CATEGORY(LogAS_Combat);
+DEFINE_LOG_CATEGORY(LogAS_AI);

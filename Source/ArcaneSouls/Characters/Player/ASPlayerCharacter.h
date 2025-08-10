@@ -45,6 +45,11 @@ public: // UFUNCTION (public)
     void OnGuardPressed(const FInputActionValue& Value);
     void OnGuardEnd(const FInputActionValue& Value);
 
+    // Guard: 탭/홀드 분리를 위한 핸들러(Started/Triggered/Completed)
+    void OnGuardStarted(const FInputActionValue& Value);
+    void OnGuardTick(const FInputActionValue& Value);
+    void OnGuardCompleted(const FInputActionValue& Value);
+
 protected: // UPROPERTY (protected)
     // [Components]
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
@@ -158,4 +163,11 @@ protected: // UFUNCTION (protected)
     void SelectSpell5(const FInputActionValue& Value);
 
     FIntPoint GetFacingDir4() const;
+
+    // [Guard] 탭/홀드 판정 파라미터
+    UPROPERTY(EditDefaultsOnly, Category="Combat|Guard")
+    float GuardTapThresholdSec = 0.12f;
+
+    double GuardPressStartTime = 0.0;
+    bool bGuardHeld = false;
 };

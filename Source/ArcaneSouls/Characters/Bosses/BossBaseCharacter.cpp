@@ -31,9 +31,9 @@ void ABossBaseCharacter::ReceiveFinisher(AActor* FinisherSource)
 
 void ABossBaseCharacter::OnFinisherHit()
 {
-	// 보스 Max HP 15% 감소
-	const float Damage = MaxHP * 0.15f;
-	CurrentHP = FMath::Clamp(CurrentHP - Damage, 0.f, MaxHP);
+    // 보스 Max HP 자체를 15% 감소시키고, 현재 HP를 새로운 Max에 맞춰 클램프
+    MaxHP = FMath::Max(1.f, MaxHP * 0.85f);
+    CurrentHP = FMath::Min(CurrentHP, MaxHP);
 
 	// 디버프 적용 (예시: 최근 ParryWindow 정보에서 가져온다고 가정)
 	// 실제 적용은 Notify → ParryComponent → Boss에 전달 구조 필요

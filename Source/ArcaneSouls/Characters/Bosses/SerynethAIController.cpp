@@ -3,6 +3,7 @@
 #include "BehaviorTree/BlackboardData.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "ArcaneSouls/Core/ASLogChannels.h"
 
 ASerynethAIController::ASerynethAIController()
 {
@@ -18,12 +19,12 @@ void ASerynethAIController::BeginPlay()
 	{
 		RunBehaviorTree(BehaviorTreeAsset);
 
-		// 플레이어 타겟 세팅 (아까 설명대로)
+        // [AI] 플레이어 타겟 세팅
 		AActor* Player = UGameplayStatics::GetPlayerPawn(this, 0);
 		if (Player)
 		{
 			Blackboard->SetValueAsObject("TargetActor", Player);
-			UE_LOG(LogTemp, Warning, TEXT("OnPossess"));
+            UE_LOG(LogAS_AI, Display, TEXT("TargetActor = %s"), *Player->GetName());
 		}
 	}
 }

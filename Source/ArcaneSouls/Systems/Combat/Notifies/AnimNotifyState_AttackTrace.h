@@ -26,4 +26,7 @@ protected: // UPROPERTY (protected)
 
 private:
     FVector PrevTip = FVector::ZeroVector;
+
+    // 한 프레임 내 중복 히트 방지용 캐시
+    TSet<TWeakObjectPtr<AActor>> HitActorsThisFrame;
 };

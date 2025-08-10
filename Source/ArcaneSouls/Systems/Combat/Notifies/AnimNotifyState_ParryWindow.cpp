@@ -30,14 +30,12 @@ void UAnimNotifyState_ParryWindow::NotifyBegin(USkeletalMeshComponent* MeshComp,
     Window.EndTime   = Start + W;
     Window.Element   = Element;
 
-    if (APlayerController* PC = UGameplayStatics::GetPlayerController(World, 0))
+    // PC 0 하드코딩 최소화: 가능한 경우 현재 월드의 플레이어 캐릭터 참조 사용
+    if (AASPlayerCharacter* PlayerChar = Cast<AASPlayerCharacter>(UGameplayStatics::GetPlayerCharacter(World, 0)))
     {
-        if (AASPlayerCharacter* PlayerChar = Cast<AASPlayerCharacter>(PC->GetPawn()))
+        if (UASParryComponent* PlayerParryComp = PlayerChar->FindComponentByClass<UASParryComponent>())
         {
-            if (UASParryComponent* PlayerParryComp = PlayerChar->FindComponentByClass<UASParryComponent>())
-            {
-                PlayerParryComp->SetParryWindow(Window);
-            }
+            PlayerParryComp->SetParryWindow(Window);
         }
     }
 

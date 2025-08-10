@@ -8,6 +8,7 @@ void UAnimNotifyState_AttackTrace::NotifyBegin(USkeletalMeshComponent* MeshComp,
 {
 	if (!MeshComp) return;
 	PrevTip = MeshComp->GetSocketLocation(TipSocket);
+    HitActorsThisFrame.Reset();
 }
 
 void UAnimNotifyState_AttackTrace::NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float FrameDeltaTime)
@@ -24,14 +25,26 @@ void UAnimNotifyState_AttackTrace::NotifyTick(USkeletalMeshComponent* MeshComp, 
 	Params.AddIgnoredActor(Owner);
 
 	TArray<FHitResult> Hits;
-	if (MeshComp->GetWorld()->SweepMultiByChannel(Hits, PrevTip, CurrentTip, FQuat::Identity, ECC_Pawn, Shape, Params))
+    if (MeshComp->GetWorld()->SweepMultiByChannel(Hits, PrevTip, CurrentTip, FQuat::Identity, ECC_Pawn, Shape, Params))
 	{
 		for (const FHitResult& Hit : Hits)
 		{
-			if (AASCharacterBase* Player = Cast<AASCharacterBase>(Hit.GetActor()))
+            AActor* Victim = Hit.GetActor();
+            if (!Victim)
 			{
-				// 중복 방지 필요시 처리 추가
-				// Player->OnHitByBoss(); // 임시 처리 함수 (직접 구현 필요)
+                continue;
+            }
+
+            if (HitActorsThisFrame.Contains(Victim))
+            {
+                continue;
+            }
+            HitActorsThisFrame.Add(Victim);
+
+            if (AASCharacterBase* Character = Cast<AASCharacterBase>(Victim))
+            {
+                // 간단 분기: 가드 중이면 블록 처리, 아니면 후속 처리(데미지/경직 등)로 위임
+                Character->OnGuardBlockHit(/*Damage*/1.f, Owner);
 			}
 		}
 	}
@@ -46,5 +59,5 @@ void UAnimNotifyState_AttackTrace::NotifyTick(USkeletalMeshComponent* MeshComp, 
 
 void UAnimNotifyState_AttackTrace::NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation)
 {
-	// 종료 시 별도 처리 필요 없다면 생략 가능
+    HitActorsThisFrame.Reset();
 }
