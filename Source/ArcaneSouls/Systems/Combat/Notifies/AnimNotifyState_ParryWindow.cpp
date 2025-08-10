@@ -3,6 +3,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "ArcaneSouls/Systems/Combat/Data/ASParryConstants.h"
 #include "ArcaneSouls/Characters/Player/ASPlayerCharacter.h"
+#include "ArcaneSouls/Core/ASLogChannels.h"
 #include "ArcaneSouls/Systems/Combat/Components/ASParryComponent.h"
 
 void UAnimNotifyState_ParryWindow::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float TotalDuration)
@@ -40,10 +41,8 @@ void UAnimNotifyState_ParryWindow::NotifyBegin(USkeletalMeshComponent* MeshComp,
         }
     }
 
-#if !(UE_BUILD_SHIPPING)
-    UE_LOG(LogTemp, Verbose, TEXT("[ParryNotify] Start=%.4f End=%.4f Center=%.4f Norm=%.2f Bias=%.3f Dur=%.3f"),
+    UE_LOG(LogAS_Combat, Verbose, TEXT("[ParryNotify] Start=%.4f End=%.4f Center=%.4f Norm=%.2f Bias=%.3f Dur=%.3f"),
         Window.StartTime, Window.EndTime, Center, Norm, ActivationBiasSeconds, TotalDuration);
-#endif
 }
 
 void UAnimNotifyState_ParryWindow::NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation)

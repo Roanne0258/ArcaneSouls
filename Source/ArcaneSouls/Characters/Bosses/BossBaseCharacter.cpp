@@ -76,3 +76,13 @@ void ABossBaseCharacter::ApplyDebuffEffect(EParryElementType Type)
 		break;
 	}
 }
+
+float ABossBaseCharacter::GetMaxHP() const
+{
+    return MaxHP;
+}
+
+void ABossBaseCharacter::ApplyChipDamage(float Amount)
+{
+    CurrentHP = FMath::Clamp(CurrentHP - Amount, 0.f, MaxHP);
+}

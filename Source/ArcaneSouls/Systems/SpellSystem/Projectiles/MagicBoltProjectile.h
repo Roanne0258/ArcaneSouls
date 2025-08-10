@@ -15,14 +15,14 @@ class ARCANESOULS_API AMagicBoltProjectile : public AASProjectileBase
 {
 	GENERATED_BODY()
 public:
-	AMagicBoltProjectile();
-	virtual void HandleImpact(const FHitResult& Hit) override
-	{
-		// 폭발 이펙트 호출 등
-		Super::HandleImpact(Hit);
-	}
+    AMagicBoltProjectile();
 
-	void BeginPlay();
-	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse,
-	           const FHitResult& Hit);
+    virtual void HandleImpact(const FHitResult& Hit) override
+    {
+        // 폭발 이펙트 호출 등
+        Super::HandleImpact(Hit);
+    }
+
+protected:
+    virtual void BeginPlay() override;
 };

@@ -19,14 +19,14 @@ public:
 	void BeginPlay();
 	void ApplyGridDamage_Implementation(int32 Amount);
 	void ApplyGridIce_Implementation(int32 Amount);
-	UPROPERTY()
+    UPROPERTY()
 	UGridPuzzleManagerComponent* GridMgr = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Grid")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Grid")
 	FIntPoint GridA;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Grid")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Grid")
 	FIntPoint GridB;
 
 protected:
-	UPROPERTY(VisibleAnywhere)
+    UPROPERTY(VisibleAnywhere, Category="Components")
 	class UGeometryCollectionComponent* GCComp;
 };

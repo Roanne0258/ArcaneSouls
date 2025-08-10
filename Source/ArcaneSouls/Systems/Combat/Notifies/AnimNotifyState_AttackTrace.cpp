@@ -2,6 +2,7 @@
 #include "GameFramework/Actor.h"
 #include "DrawDebugHelpers.h"
 #include "ArcaneSouls/Characters/ASCharacterBase.h"
+#include "ArcaneSouls/Core/ASLogChannels.h"
 
 void UAnimNotifyState_AttackTrace::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float TotalDuration)
 {

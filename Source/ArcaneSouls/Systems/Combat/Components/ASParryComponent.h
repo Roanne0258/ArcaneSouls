@@ -12,7 +12,7 @@
 /* ───── Forward Decls ───── */
 class AASCharacterBase;
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class ARCANESOULS_API UASParryComponent : public UActorComponent
 {
 	GENERATED_BODY()

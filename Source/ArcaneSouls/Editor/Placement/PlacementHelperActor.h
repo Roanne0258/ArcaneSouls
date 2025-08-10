@@ -20,7 +20,6 @@ class ARCANESOULS_API APlacementHelperActor : public AActor
 
 	/* ──────────────── Public Vars ──────────────── */
 public:
-
 	/** 배치 대상 메시 (인스턴스 전용) */
 	UPROPERTY(EditInstanceOnly, Category="Placement")
 	UStaticMeshComponent* MeshComp = nullptr;

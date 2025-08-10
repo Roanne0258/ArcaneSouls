@@ -49,10 +49,10 @@ void AASProjectileBase::ApplyDamage(AActor* Other)
 
 void AASProjectileBase::InitVelocity(const FVector& Velocity)
 {
-	if (ProjectileMovement)
-	{
-		ProjectileMovement->Velocity = Velocity;
-	}
+    if (MovementComp)
+    {
+        MovementComp->Velocity = Velocity;
+    }
 }
 
 void AASProjectileBase::SetDamage(float NewDamage)

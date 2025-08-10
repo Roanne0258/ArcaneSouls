@@ -3,7 +3,7 @@
 #include "ArcaneSouls/Characters/Player/ASPlayerCharacter.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Components/SphereComponent.h"
-#include "Kismet/GameplayStatics.h"  // ApplyDamage 등 사용 시
+#include "Kismet/GameplayStatics.h"
 
 AMagicBoltProjectile::AMagicBoltProjectile()
 {
@@ -35,13 +35,4 @@ void AMagicBoltProjectile::BeginPlay()
 {
 	Super::BeginPlay();
 	// 필요 시 추가 초기화
-}
-
-void AMagicBoltProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
-{
-	if (OtherActor && OtherActor != this && Damage > 0)
-	{
-		UGameplayStatics::ApplyDamage(OtherActor, Damage, GetInstigatorController(), this, nullptr);
-	}
-	Destroy();
 }

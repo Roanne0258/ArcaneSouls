@@ -27,15 +27,16 @@ public:
 	void InitProjectile(float InSpeed, float InBaseDamage, float InDamageScale, EParryElementType InElement);
 
 protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	UProjectileMovementComponent* ProjectileMovement;
+    // [Components]
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
+    USphereComponent* CollisionComp;
 
-	// 실제 데미지 값
-	float Damage = 0.f;
-	// ■ 콜리전
-	UPROPERTY(VisibleAnywhere) USphereComponent* CollisionComp;
-	// ■ 움직임
-	UPROPERTY(VisibleAnywhere) UProjectileMovementComponent* MovementComp;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
+    UProjectileMovementComponent* MovementComp;
+
+    // 실제 데미지 값
+    UPROPERTY(VisibleAnywhere, Category="Damage")
+    float Damage = 0.f;
 	// ■ 데미지/속성
 	UPROPERTY(EditDefaultsOnly, Category="Damage") float BaseDamage;
 	UPROPERTY(EditDefaultsOnly, Category="Damage") float DamageScale;

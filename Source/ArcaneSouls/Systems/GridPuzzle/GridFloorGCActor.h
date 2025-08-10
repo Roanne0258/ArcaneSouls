@@ -19,6 +19,6 @@ public:
 	void ApplyGridIce_Implementation(int32 Amount);
 
 protected:
-	UPROPERTY(VisibleAnywhere)
+    UPROPERTY(VisibleAnywhere, Category="Components")
 	class UGeometryCollectionComponent* GCComp;
 };

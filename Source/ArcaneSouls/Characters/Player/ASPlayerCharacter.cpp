@@ -42,19 +42,6 @@ AASPlayerCharacter::AASPlayerCharacter()
 void AASPlayerCharacter::BeginPlay()
 {
     Super::BeginPlay();
-    GridMgr = FindComponentByClass<UGridPuzzleManagerComponent>();
-    ensureMsgf(GridMgr, TEXT("[Puzzle] GridMgr NOT FOUND!"));
-    if (APlayerController* PC = Cast<APlayerController>(GetController()))
-    {
-        if (ULocalPlayer* LP = PC->GetLocalPlayer())
-        {
-            if (UEnhancedInputLocalPlayerSubsystem* SubSys =
-                LP->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
-            {
-                SubSys->AddMappingContext(IMC_Player, 0);
-            }
-        }
-    }
 }
 
 void AASPlayerCharacter::SetupPlayerInputComponent(UInputComponent* IC)
@@ -211,6 +198,17 @@ void AASPlayerCharacter::OnGuardEnd(const FInputActionValue& /*Value*/)
 {
     AASCharacterBase::OnGuardEnd(); // ← 이걸로 교체
 }
+void AASPlayerCharacter::OnGuardPressed(const FInputActionValue& /*Value*/)
+{
+    if (ParryComponent)
+    {
+        ParryComponent->EvaluateParry();
+    }
+    else
+    {
+        OnGuardStart();
+    }
+}
 void AASPlayerCharacter::OnLockOn   () {}
 void AASPlayerCharacter::OnInteract () {}
 void AASPlayerCharacter::OnInventory() {}
@@ -230,17 +228,5 @@ float AASPlayerCharacter::GetMagicPower() const
     if (SpellComp)
         return SpellComp->GetMagicPower();  
     return 1.0f;
-}
-
-// --- MP 접근자 정의 ---
-float AASPlayerCharacter::GetCurrentMP() const
-{
-    return CurrentMP;  // CurrentMP는 헤더에서 UPROPERTY로 관리된 값이어야 합니다
-}
-
-void AASPlayerCharacter::ModifyMP(float Delta)
-{
-    // MP 최소 0, 최대 MaxMP 범위로 클램프
-    CurrentMP = FMath::Clamp(CurrentMP + Delta, 0.0f, MaxMP);
 }
 

@@ -13,23 +13,24 @@ class ARCANESOULS_API UBTTask_BossAttack_Parryable : public UBTTaskNode
 {
 	GENERATED_BODY()
 
-public:
-	UBTTask_BossAttack_Parryable();
+public: // UFUNCTION (public)
+    UBTTask_BossAttack_Parryable();
 
-	/** 공격 몽타주 */
-	UPROPERTY(EditAnywhere, Category="Attack")
-	UAnimMontage* AttackMontage;
+protected: // UPROPERTY (protected)
+    /** 공격 몽타주 */
+    UPROPERTY(EditAnywhere, Category="AI|Attack")
+    UAnimMontage* AttackMontage;
 
-	/** 몽타주 재생 속도 */
-	UPROPERTY(EditAnywhere, Category="Attack")
-	float PlayRate = 1.0f;
+    /** 몽타주 재생 속도 */
+    UPROPERTY(EditAnywhere, Category="AI|Attack")
+    float PlayRate = 1.0f;
 
-protected:
-	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
+protected: // UFUNCTION (protected)
+    virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
 
-	/** 종료를 기다릴 경우 필요 */
-	virtual void TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
+    /** 종료를 기다릴 경우 필요 */
+    virtual void TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
 
 private:
-	bool bIsPlaying = false;
+    bool bIsPlaying = false;
 };

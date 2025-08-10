@@ -15,57 +15,67 @@ class USpringArmComponent;
 UCLASS()
 class ARCANESOULS_API AASCharacterBase : public ACharacter
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
-public:
-	/* ───── Camera ───── */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera")
-	USpringArmComponent* CameraBoom;
+public: // UPROPERTY (public)
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera")
+    USpringArmComponent* CameraBoom;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera")
-	UCameraComponent* FollowCamera;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera")
+    UCameraComponent* FollowCamera;
 
-public:
-	// Sets default values for this character's properties
-	AASCharacterBase();
+public: // UFUNCTION (public)
+    AASCharacterBase();
 
-	/* ───── 전투 액션 ───── */
-	virtual void ReceiveFinisher(AActor* FinisherSource);
-	virtual bool HasMP(int32 Amount) const;
-	virtual void ConsumeMP(int32 Amount);
-	virtual void RestoreMP(float Amount);
+    // [Combat] Finisher/MP
+    virtual void ReceiveFinisher(AActor* FinisherSource);
+    virtual bool HasMP(int32 Amount) const;
+    virtual void ConsumeMP(int32 Amount);
+    virtual void RestoreMP(float Amount);
 
-	// Guard 시작/종료(입력 바인딩에서 호출)
-	UFUNCTION(BlueprintCallable) void OnGuardStart();
-	UFUNCTION(BlueprintCallable) void OnGuardEnd();
+    // [Guard] 시작/종료
+    UFUNCTION(BlueprintCallable, Category="Combat|Guard")
+    void OnGuardStart();
 
-	UFUNCTION(BlueprintCallable) void OnGuardBlockHit(float DamageAmount, AActor* Instigator);
+    UFUNCTION(BlueprintCallable, Category="Combat|Guard")
+    void OnGuardEnd();
 
-	// 기존 시그니처 유지 시, 내부에서 OnGuardStart 호출하도록 연결 가능
-	UFUNCTION(BlueprintCallable) void ApplyGuard(float /*Unused*/, AActor* /*Instigator*/);
+    UFUNCTION(BlueprintCallable, Category="Combat|Guard")
+    void OnGuardBlockHit(float DamageAmount, AActor* InstigatorActor);
 
-	// MP/HP 접근·수정(이미 있다면 재사용)
-	UFUNCTION(BlueprintPure)  float GetCurrentMP() const;
-	UFUNCTION(BlueprintCallable) void ModifyMP(float Delta);
-	UFUNCTION(BlueprintPure)  float GetMaxHP() const;
-	UFUNCTION(BlueprintCallable) void ApplyChipDamage(float Amount);
+    // 기존 시그니처 유지 시, 내부에서 OnGuardStart 호출하도록 연결 가능
+    UFUNCTION(BlueprintCallable, Category="Combat|Guard")
+    void ApplyGuard(float Unused, AActor* InstigatorActor);
 
-protected:
-	// Guard 중복 결제 방지
-	UPROPERTY(VisibleInstanceOnly, Category="Guard")
-	bool bIsGuarding = false;
-	
-	/* ───── 컴포넌트 ───── */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
-	UASParryComponent* ParryComponent;
+    // [Stats]
+    UFUNCTION(BlueprintPure, Category="Stats")
+    float GetCurrentMP() const;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
-	UASFinisherManagerComponent* FinisherComponent;
+    UFUNCTION(BlueprintCallable, Category="Stats")
+    void ModifyMP(float Delta);
 
-	/* ───── 스탯 ───── */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Stats")
-	float MaxMP = 100.f;
+    UFUNCTION(BlueprintPure, Category="Stats")
+    virtual float GetMaxHP() const;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Stats")
-	float CurrentMP = 100.f;
+    UFUNCTION(BlueprintCallable, Category="Stats")
+    virtual void ApplyChipDamage(float Amount);
+
+protected: // UPROPERTY (protected)
+    // Guard 중복 결제 방지
+    UPROPERTY(VisibleInstanceOnly, Category="Combat|Guard")
+    bool bIsGuarding = false;
+
+    // Components
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
+    UASParryComponent* ParryComponent;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
+    UASFinisherManagerComponent* FinisherComponent;
+
+    // Stats
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Stats")
+    float MaxMP = 100.f;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Stats")
+    float CurrentMP = 100.f;
 };

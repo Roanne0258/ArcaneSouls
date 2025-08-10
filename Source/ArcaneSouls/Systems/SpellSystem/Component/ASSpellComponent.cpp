@@ -48,7 +48,7 @@ void UASSpellComponent::LoadSpellData(const FName& RowName)
 
 void UASSpellComponent::StartCharge()
 {
-	UE_LOG(LogTemp, Warning, TEXT("StartCharge"));
+    UE_LOG(LogAS_Spell, Warning, TEXT("StartCharge"));
 	if (bIsCharging) return;
 	bIsCharging = true;
 	CurrentStacks = 0;
@@ -141,7 +141,7 @@ void UASSpellComponent::ReleaseCharge()
 
 void UASSpellComponent::CastInstant()
 {
-	UE_LOG(LogTemp, Warning, TEXT("CastInstant"));
+    UE_LOG(LogAS_Spell, Warning, TEXT("CastInstant"));
 	// 1) 호출 여부 확인
 	UE_LOG(LogAS_Spell, Warning, TEXT("CastInstant() called on %s"), *GetOwner()->GetName());
 

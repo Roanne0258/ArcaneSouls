@@ -13,21 +13,21 @@ class ARCANESOULS_API ASerynethAIController : public AAIController
 {
 	GENERATED_BODY()
 
-public:
-	ASerynethAIController();
+public: // UFUNCTION (public)
+    ASerynethAIController();
 
-protected:
-	virtual void BeginPlay() override;
+protected: // UFUNCTION (protected)
+    virtual void BeginPlay() override;
 
-	/** 초기 블랙보드 / 트리 설정 */
-	void StartAI();
+    /** 초기 블랙보드 / 트리 설정 */
+    void StartAI();
 
-protected:
-	UPROPERTY(EditDefaultsOnly, Category="AI")
-	UBehaviorTree* BehaviorTreeAsset;
+protected: // UPROPERTY (protected)
+    UPROPERTY(EditDefaultsOnly, Category="AI")
+    UBehaviorTree* BehaviorTreeAsset;
 
-	UPROPERTY(EditDefaultsOnly, Category="AI")
-	UBlackboardData* BlackboardAsset;
+    UPROPERTY(EditDefaultsOnly, Category="AI")
+    UBlackboardData* BlackboardAsset;
 
-	virtual void OnPossess(APawn* InPawn) override;
+    virtual void OnPossess(APawn* InPawn) override;
 };

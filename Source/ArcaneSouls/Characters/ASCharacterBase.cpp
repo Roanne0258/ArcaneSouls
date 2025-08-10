@@ -56,7 +56,7 @@ void AASCharacterBase::OnGuardEnd()
 	// TODO: 해제 비주얼/상태
 }
 
-void AASCharacterBase::OnGuardBlockHit(float DamageAmount, AActor* Instigator)
+void AASCharacterBase::OnGuardBlockHit(float DamageAmount, AActor* InstigatorActor)
 {
 	if (!bIsGuarding) return;
 
@@ -77,7 +77,7 @@ void AASCharacterBase::OnGuardBlockHit(float DamageAmount, AActor* Instigator)
 	// 참고: 여기서 데미지 감쇠/경직 무효화 등 가드 효과를 함께 처리해도 좋아요.
 }
 
-void AASCharacterBase::ApplyGuard(float /*Unused*/, AActor* /*Instigator*/)
+void AASCharacterBase::ApplyGuard(float /*Unused*/, AActor* /*InstigatorActor*/)
 {
 	OnGuardStart();
 }
@@ -107,3 +107,15 @@ void AASCharacterBase::RestoreMP(float Amount)
 
 float AASCharacterBase::GetCurrentMP() const { return CurrentMP; }
 void  AASCharacterBase::ModifyMP(float Delta) { CurrentMP = FMath::Clamp(CurrentMP + Delta, 0.f, MaxMP); }
+
+float AASCharacterBase::GetMaxHP() const
+{
+    // 기본 구현: 100.0f 반환. 파생 클래스에서 override 권장
+    return 100.f;
+}
+
+void AASCharacterBase::ApplyChipDamage(float Amount)
+{
+    // 기본 구현: 로그만 남김. 파생 클래스에서 HP 감소 로직 override 권장
+    UE_LOG(LogAS_Combat, Verbose, TEXT("[Guard] ChipDamage=%.1f (override in subclass to apply)"), Amount);
+}

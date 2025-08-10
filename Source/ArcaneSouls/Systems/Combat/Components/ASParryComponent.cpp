@@ -5,11 +5,11 @@
 #include "ASParryComponent.h"
 #include "ArcaneSouls/Characters/ASCharacterBase.h"
 #include "ArcaneSouls/Systems/Combat/Data/ASParryConstants.h"
+#include "ArcaneSouls/Core/ASLogChannels.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
 #include "Misc/OutputDeviceDebug.h"
 #include "Logging/LogMacros.h"
-DEFINE_LOG_CATEGORY_STATIC(LogAS_Combat, Log, All);
 
 UASParryComponent::UASParryComponent()
 {
@@ -127,10 +127,10 @@ void UASParryComponent::HandleParryFail()
 	UE_LOG(LogTemp, Warning, TEXT("[Parry] Failed → Guard if held"));
 
 	// 조기 가드 처리 등은 ASCharacterBase::ApplyGuard()에 위임
-	if (OwnerCharacter)
-	{
-		OwnerCharacter->ApplyGuard(0.f, nullptr);
-	}
+    if (OwnerCharacter)
+    {
+        OwnerCharacter->ApplyGuard(0.f, nullptr);
+    }
 
 	ClearParryWindow();
 }

@@ -30,7 +30,7 @@ struct FSpellData : public FTableRowBase
 // 로그 카테고리 선언
 DECLARE_LOG_CATEGORY_EXTERN(LogAS_Spell, Log, All);
 
-UCLASS( ClassGroup=(Magic), meta=(BlueprintSpawnableComponent) )
+UCLASS(ClassGroup=(Magic), meta=(BlueprintSpawnableComponent))
 class ARCANESOULS_API UASSpellComponent : public UActorComponent
 {
 	GENERATED_BODY()
@@ -51,7 +51,7 @@ public:
 	void CancelCharge();
 
 	/** 현재 마법력 반환 */
-	UFUNCTION(BlueprintCallable, Category="Magic")
+    UFUNCTION(BlueprintCallable, Category="Magic")
 	float GetMagicPower() const { return MagicPower; }
 	
 	// --- 슬롯 선택 API ---
