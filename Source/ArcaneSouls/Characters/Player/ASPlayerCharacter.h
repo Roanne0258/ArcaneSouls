@@ -38,6 +38,10 @@ public:
     // MP 관련 함수들
     float GetCurrentMP() const;
     void ModifyMP(float Delta);
+
+    void OnGuardPressed(const FInputActionValue& Value);
+    void OnGuardEnd(const FInputActionValue& Value);
+
 protected:
     /* ───── ACharacter overrides ───── */
     virtual void BeginPlay() override;
@@ -83,8 +87,6 @@ protected:
 
     void OnAttack   ();
     void OnDodge    ();
-    void OnGuardStart();
-    void OnGuardEnd ();
     void OnLockOn   ();
     void OnInteract ();
     void OnInventory();

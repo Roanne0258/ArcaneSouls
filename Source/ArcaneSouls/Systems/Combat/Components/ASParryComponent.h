@@ -53,4 +53,15 @@ protected:
 
 	/** 패링 실패 → Guard 가능 여부 판별 */
 	void HandleParryFail();
+
+private:
+
+	// 윈도우 종료 예약용 타이머
+	FTimerHandle ParryWindowTimerHandle;
+
+	// 노티파이 End가 너무 빨라도, "윈도우 종료시각"에 맞춰 지우도록 예약
+	void ScheduleParryWindowClear(float EndTimeSeconds);
+
+	// 타이머 콜백
+	void OnParryWindowTimerExpired();
 };

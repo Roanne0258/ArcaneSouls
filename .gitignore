@@ -50,11 +50,21 @@ Content/Marketplace/
 # JetBrains Rider / IntelliJ
 .idea/
 
+# GPT 보조 산출물
 /Prompt_ArcaneSouls.txt
 /gpt/
+!/gpt/charter.md
+!/gpt/*.ps1
 
-@"
-# local helpers
+# 로컬 전용 배치 스크립트(추적 제외)
+# (루트에 있는 파일명만 정확히 제외)
+#/-- helpers --/
+start_session.bat
+end_session_prepare.bat
+end_session_apply.bat
+setup_gitignore.bat
+git_to_gpt.bat
+update_code_bundle.bat
+
+# 기타 로컬 헬퍼 아티팩트
 /code_bundle.txt
-/git_to_gpt.bat
-"@ | Add-Content .gitignore

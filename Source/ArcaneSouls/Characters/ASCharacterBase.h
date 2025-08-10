@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "ASCharacterBase.generated.h"
 
+class AActor;
 class UASFinisherManagerComponent;
 class UASParryComponent;
 class UCameraComponent;
@@ -29,18 +30,31 @@ public:
 	AASCharacterBase();
 
 	/* ───── 전투 액션 ───── */
-	virtual void TryParry();
-	virtual void ApplyGuard(float Damage, AActor* DamageCauser);
 	virtual void ReceiveFinisher(AActor* FinisherSource);
 	virtual bool HasMP(int32 Amount) const;
 	virtual void ConsumeMP(int32 Amount);
 	virtual void RestoreMP(float Amount);
 
-	/* ───── 스탯 조회 ───── */
-	FORCEINLINE float GetMaxMP() const { return MaxMP; }
-	FORCEINLINE float GetCurrentMP() const { return CurrentMP; }
+	// Guard 시작/종료(입력 바인딩에서 호출)
+	UFUNCTION(BlueprintCallable) void OnGuardStart();
+	UFUNCTION(BlueprintCallable) void OnGuardEnd();
+
+	UFUNCTION(BlueprintCallable) void OnGuardBlockHit(float DamageAmount, AActor* Instigator);
+
+	// 기존 시그니처 유지 시, 내부에서 OnGuardStart 호출하도록 연결 가능
+	UFUNCTION(BlueprintCallable) void ApplyGuard(float /*Unused*/, AActor* /*Instigator*/);
+
+	// MP/HP 접근·수정(이미 있다면 재사용)
+	UFUNCTION(BlueprintPure)  float GetCurrentMP() const;
+	UFUNCTION(BlueprintCallable) void ModifyMP(float Delta);
+	UFUNCTION(BlueprintPure)  float GetMaxHP() const;
+	UFUNCTION(BlueprintCallable) void ApplyChipDamage(float Amount);
 
 protected:
+	// Guard 중복 결제 방지
+	UPROPERTY(VisibleInstanceOnly, Category="Guard")
+	bool bIsGuarding = false;
+	
 	/* ───── 컴포넌트 ───── */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
 	UASParryComponent* ParryComponent;

@@ -9,6 +9,8 @@
 #include "ArcaneSouls/Systems/Combat/Components/ASFinisherManagerComponent.h"
 #include "ArcaneSouls/Systems/Combat/Data/ASParryConstants.h"
 #include "Kismet/GameplayStatics.h"
+#include "ArcaneSouls/Core/ASLogChannels.h"
+#include "ArcaneSouls/Systems/Guard/ASGuardConstants.h"
 
 // Sets default values
 AASCharacterBase::AASCharacterBase()
@@ -26,28 +28,58 @@ AASCharacterBase::AASCharacterBase()
 
 }
 
-void AASCharacterBase::TryParry()
+void AASCharacterBase::OnGuardStart()
 {
-	if (ParryComponent)
+	if (bIsGuarding) return;
+
+	const float cost    = ASGuard::GuardStartMPCost;  // ← 10으로 변경
+	const float mp      = GetCurrentMP();
+	const float pay     = FMath::Min(mp, cost);
+	const float deficit = cost - pay;
+
+	if (pay > 0.f) { ModifyMP(-pay); }
+	if (deficit > 0.f)
 	{
-		ParryComponent->EvaluateParry();
+		const float chip = GetMaxHP() * ASGuard::GuardChipRatio * deficit;
+		ApplyChipDamage(chip);
 	}
+
+	bIsGuarding = true;
+	UE_LOG(LogAS_Combat, Display, TEXT("[Guard] Start: pay=%.1f deficit=%.1f"), pay, deficit);
 }
 
-void AASCharacterBase::ApplyGuard(float Damage, AActor* DamageCauser)
+void AASCharacterBase::OnGuardEnd()
 {
-	const int32 Cost = ASParry::GuardMPCost;
-	if (HasMP(Cost))
+	if (!bIsGuarding) return;
+	bIsGuarding = false;
+	UE_LOG(LogAS_Combat, Display, TEXT("🛑 Guard Ended"));
+	// TODO: 해제 비주얼/상태
+}
+
+void AASCharacterBase::OnGuardBlockHit(float DamageAmount, AActor* Instigator)
+{
+	if (!bIsGuarding) return;
+
+	const float cost    = ASGuard::GuardBlockMPCost;   // ← 20
+	const float mp      = GetCurrentMP();
+	const float pay     = FMath::Min(mp, cost);
+	const float deficit = cost - pay;
+
+	if (pay > 0.f) { ModifyMP(-pay); }
+	if (deficit > 0.f)
 	{
-		ConsumeMP(Cost);
+		const float chip = GetMaxHP() * ASGuard::GuardChipRatio * deficit;
+		ApplyChipDamage(chip);
 	}
-	else
-	{
-		const float Deficit = Cost - CurrentMP;
-		ConsumeMP(CurrentMP);
-		const float HPChip = Deficit * ASParry::GuardChipRatio;
-		// Chip damage 적용 로직 (🛠 업데이트 예정)
-	}
+
+	UE_LOG(LogAS_Combat, Display, TEXT("[Guard] BlockedHit: pay=%.1f deficit=%.1f dmg=%.1f"), pay, deficit, DamageAmount);
+
+	// 참고: 여기서 데미지 감쇠/경직 무효화 등 가드 효과를 함께 처리해도 좋아요.
+}
+
+void AASCharacterBase::ApplyGuard(float /*Unused*/, AActor* /*Instigator*/)
+{
+	OnGuardStart();
 }
 
 void AASCharacterBase::ReceiveFinisher(AActor* FinisherSource)
@@ -72,3 +104,6 @@ void AASCharacterBase::RestoreMP(float Amount)
 {
 	CurrentMP = FMath::Min(MaxMP, CurrentMP + Amount);
 }
+
+float AASCharacterBase::GetCurrentMP() const { return CurrentMP; }
+void  AASCharacterBase::ModifyMP(float Delta) { CurrentMP = FMath::Clamp(CurrentMP + Delta, 0.f, MaxMP); }

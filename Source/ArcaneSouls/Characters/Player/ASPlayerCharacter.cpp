@@ -10,6 +10,7 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Controller.h"
 #include "DrawDebugHelpers.h"
+#include "ArcaneSouls/Systems/Combat/Components/ASParryComponent.h"
 #include "ArcaneSouls/Systems/Combat/Data/ParryTypes.h"
 #include "ArcaneSouls/Systems/Interfaces/DamageableInterface.h"
 #include "ArcaneSouls/Systems/SpellSystem/Component/ASSpellComponent.h"
@@ -73,7 +74,7 @@ void AASPlayerCharacter::SetupPlayerInputComponent(UInputComponent* IC)
 
     EIC->BindAction(IA_Attack , ETriggerEvent::Started, this, &AASPlayerCharacter::OnAttack);
     EIC->BindAction(IA_Dodge  , ETriggerEvent::Started, this, &AASPlayerCharacter::OnDodge);
-    EIC->BindAction(IA_Guard  , ETriggerEvent::Started, this, &AASPlayerCharacter::TryParry);
+    EIC->BindAction(IA_Guard  , ETriggerEvent::Started, this, &AASPlayerCharacter::OnGuardPressed);
     EIC->BindAction(IA_Guard  , ETriggerEvent::Completed, this, &AASPlayerCharacter::OnGuardEnd);
     EIC->BindAction(IA_Lockon , ETriggerEvent::Started, this, &AASPlayerCharacter::OnLockOn);
     EIC->BindAction(IA_Interact, ETriggerEvent::Started, this, &AASPlayerCharacter::OnInteract);
@@ -205,20 +206,10 @@ void AASPlayerCharacter::OnAttack()
 {
 }
 void AASPlayerCharacter::OnDodge    () {}
-void AASPlayerCharacter::OnGuardStart()
+
+void AASPlayerCharacter::OnGuardEnd(const FInputActionValue& /*Value*/)
 {
-    UE_LOG(LogTemp, Warning, TEXT("🛡️ Guard Started"));
-
-    // 임시 이펙트나 사운드 트리거
-
-}
-
-void AASPlayerCharacter::OnGuardEnd()
-{
-    UE_LOG(LogTemp, Warning, TEXT("🛑 Guard Ended"));
-
-
-    // 이펙트 제거 또는 상태 초기화
+    AASCharacterBase::OnGuardEnd(); // ← 이걸로 교체
 }
 void AASPlayerCharacter::OnLockOn   () {}
 void AASPlayerCharacter::OnInteract () {}
@@ -252,3 +243,4 @@ void AASPlayerCharacter::ModifyMP(float Delta)
     // MP 최소 0, 최대 MaxMP 범위로 클램프
     CurrentMP = FMath::Clamp(CurrentMP + Delta, 0.0f, MaxMP);
 }
+
